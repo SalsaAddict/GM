@@ -1,0 +1,44 @@
+﻿<md-content layout="row" layout-align="center">
+    <md-card>
+        <img ng-src="{{video.thumbnail}}" ng-if="video.thumbnail" />
+        <md-card-header>
+            <md-card-header-text>
+                <span class="md-title">{{video.title || "Recommend a Song"}}</span>
+            </md-card-header-text>
+        </md-card-header>
+        <md-card-content ng-form="RecommendForm">
+            <md-input-container class="md-block" flex>
+                <label>YouTube Link</label>
+                <input name="Url" ng-model="ctrl.Url" required video-id-validator="video" />
+                <div ng-messages="RecommendForm.Url.$error" md-auto-hide="false">
+                    <div ng-message="required">Required</div>
+                    <div ng-message="videoId">The specified link is not valid</div>
+                </div>
+            </md-input-container>
+            <md-input-container class="md-block" flex>
+                <label>Dance Genre</label>
+                <md-select name="GenreId" ng-model="ctrl.GenreId" required ng-change="ctrl.FetchStyles()">
+                    <md-option ng-repeat="Genre in ctrl.Genres" value="{{Genre.Id}}">{{Genre.Name}}</md-option>
+                </md-select>
+                <div ng-messages="RecommendForm.GenreId.$error" md-auto-hide="false">
+                    <div ng-message="required">Required</div>
+                </div>
+            </md-input-container>
+            <md-input-container layout="column" ng-if="ctrl.GenreId">
+                <div ng-repeat="Style in ctrl.Styles">
+                    <md-checkbox ng-model="Style.Checked" class="md-primary">
+                        {{Style.Name}}
+                    </md-checkbox>
+                </div>
+                <input name="SelectedStyles" type="hidden" ng-model="ctrl.SelectedStyles" required />
+                <div ng-messages="RecommendForm.SelectedStyles.$error" md-auto-hide="false">
+                    <div ng-message="required">Please select at least one dance style</div>
+                </div>
+            </md-input-container>
+        </md-card-content>
+        <md-card-actions layout="row" layout-align="end center">
+            <md-button href="#/home" class="md-warn">Cancel</md-button>
+            <md-button class="md-primary" ng-disabled="RecommendForm.$invalid" ng-click="ctrl.Submit()">Submit</md-button>
+        </md-card-actions>
+    </md-card>
+</md-content>

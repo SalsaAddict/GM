@@ -15,6 +15,7 @@
     <md-toolbar>
         <div class="md-toolbar-tools">
             <md-button href="#/home">Home</md-button>
+            <md-button href="#/video/3VmoZrxXbmg/1">Flor</md-button>
             <md-button href="#/recommend">Recommend</md-button>
             <span flex></span>
         </div>
@@ -28,5 +29,6 @@
     <script src="Scripts/angular-sanitize.min.js"></script>
     <script src="Scripts/angular-material/angular-material.min.js"></script>
     <script src="Scripts/gm/gm.min.js" id="gm-script" data-authenticated="<%= Authenticated.ToString() %>"></script>
+    <script src="https://www.youtube.com/iframe_api"></script>
 </body>
 </html>

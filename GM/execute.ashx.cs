@@ -101,7 +101,7 @@ namespace GM
                                         {
                                             Command.Parameters.AddWithValue(Parameter.Key,
                                                 JsonConvert.DeserializeXmlNode(JsonConvert.SerializeObject(Parameter.Value.Value),
-                                                Parameter.Key, true).InnerXml);
+                                                "object", true).InnerXml);
                                         }
                                         else Command.Parameters.AddWithValue(Parameter.Key, Parameter.Value.Value);
                                     }

@@ -1,0 +1,32 @@
+﻿<md-content layout="row" layout-align="center">
+    <md-card>
+        <!--<img ng-src="{{video.Thumbnail}}" />-->
+        <div id="player"></div>
+        <md-card-header>
+            <md-card-header-text>
+                <span class="md-title">{{video.Title}}</span>
+                <span class="md-subhead">{{video.Genre}}</span>
+            </md-card-header-text>
+        </md-card-header>
+        <md-card-content layout="column">
+            <div ng-repeat="Review in video.Reviews" layout="row" layout-align="left center">
+                <div flex="50">
+                    <span>{{Review.Style}}</span>
+                </div>
+                <div flex="25">
+                    <md-button class="md-icon-button" ng-class="{'md-primary': Review.Like == 1}">
+                        <i class="material-icons">thumb_up</i>
+                    </md-button>
+                    {{Review.Likes}}
+                </div>
+                <div flex="25">
+                    <md-button class="md-icon-button" ng-class="{'md-warn': Review.Dislike == 1}">
+                        <i class="material-icons">thumb_down</i>
+                    </md-button>
+                    {{Review.Dislikes}}
+                </div>
+            </div>
+        </md-card-content>
+    </md-card>
+</md-content>
+

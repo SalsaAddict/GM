@@ -135,6 +135,7 @@
     <Content Include="SQL\GM.sql" />
     <Content Include="Views\home.html" />
     <Content Include="Views\recommend.html" />
+    <Content Include="Views\video.html" />
     <Content Include="Web.config" />
   </ItemGroup>
   <ItemGroup>

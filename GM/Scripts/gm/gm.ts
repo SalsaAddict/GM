@@ -16,11 +16,7 @@ module GM {
         export interface IParameters { [name: string]: IParameter; }
         export interface IHttpSuccess { data: IResponse }
         export interface IHttpError { status: number; statusText: string; }
-        export interface IProcedure {
-            name: string;
-            parameters?: IParameters;
-            type?: "object" | "array" | "singleton" | "value" | "none";
-        }
+        export interface IProcedure { name: string; parameters?: IParameters; }
         export class Service {
             static $inject: string[] = ["$q", "$http", "$log"];
             constructor(
@@ -28,8 +24,9 @@ module GM {
                 private $http: angular.IHttpService,
                 private $log: angular.ILogService) { }
             public execute(name: string, parameters: IParameters = {}): angular.IPromise<IResponse> {
-                let procedure: IProcedure = { name: name, parameters: parameters }
-                let deferred: angular.IDeferred<IResponse> = this.$q.defer();
+                let procedure: IProcedure = { name: name, parameters: parameters },
+                    deferred: angular.IDeferred<IResponse> = this.$q.defer();
+                this.$log.debug("gm:execute", procedure);
                 this.$http.post("execute.ashx", procedure).then(
                     (response: IHttpSuccess) => { deferred.resolve(response.data); },
                     (response: IHttpError) => { deferred.resolve({ success: false, data: response.statusText }); });
@@ -94,6 +91,27 @@ module GM {
             return factory;
         }
     }
+    export module Video {
+        interface IScope extends angular.IScope { video: any; }
+        export class Controller {
+            static $inject: string[] = ["$scope", "$database", "$routeParams"];
+            constructor(
+                private $scope: IScope,
+                private $database: Database.Service,
+                private $routeParams: angular.route.IRouteParamsService) {
+                $database.execute("apiVideo", {
+                    VideoId: { value: $routeParams["videoId"] },
+                    GenreId: { value: $routeParams["genreId"] }
+                }).then((response: IResponse) => {
+                    $scope.video = response.data.Video;
+                    let player = new YT.Player('player', {
+                        videoId: $scope.video.VideoId,
+                        events: { onReady: function (event: any) { event.target.playVideo(); } }
+                    });
+                });
+            }
+        }
+    }
     export module Recommend {
         export interface IScope extends angular.IScope { video: IVideo; }
         export class Controller {
@@ -129,7 +147,7 @@ module GM {
                     VideoId: { value: this.$scope.video.id },
                     Title: { value: this.$scope.video.title },
                     Thumbnail: { value: this.$scope.video.thumbnail },
-                    Styles: { value: this.Styles, isObject: true }
+                    Styles: { value: { data: this.Styles }, isObject: true }
                 })
                     .then((response: IResponse) => {
                         console.log("submitted", response);
@@ -156,9 +174,8 @@ gm.config(["$mdThemingProvider", "$routeProvider", "$logProvider", function (
     $routeProvider.caseInsensitiveMatch = true;
     $routeProvider
         .when("/home", { templateUrl: "Views/home.html" })
-        .when("/recommend", {
-            templateUrl: "Views/recommend.html", controller: GM.Recommend.Controller, controllerAs: "ctrl"
-        })
+        .when("/video/:videoId/:genreId", { templateUrl: "Views/video.html", controller: GM.Video.Controller, controllerAs: "ctrl" })
+        .when("/recommend", { templateUrl: "Views/recommend.html", controller: GM.Recommend.Controller, controllerAs: "ctrl" })
         .otherwise({ redirectTo: "/home" });
     $logProvider.debugEnabled(GM.debugEnabled);
 }]);

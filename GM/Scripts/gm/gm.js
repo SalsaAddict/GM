@@ -17,8 +17,8 @@ var GM;
             }
             Service.prototype.execute = function (name, parameters) {
                 if (parameters === void 0) { parameters = {}; }
-                var procedure = { name: name, parameters: parameters };
-                var deferred = this.$q.defer();
+                var procedure = { name: name, parameters: parameters }, deferred = this.$q.defer();
+                this.$log.debug("gm:execute", procedure);
                 this.$http.post("execute.ashx", procedure).then(function (response) { deferred.resolve(response.data); }, function (response) { deferred.resolve({ success: false, data: response.statusText }); });
                 return deferred.promise;
             };
@@ -90,6 +90,29 @@ var GM;
         }
         VideoIdValidator.DirectiveFactory = DirectiveFactory;
     })(VideoIdValidator = GM.VideoIdValidator || (GM.VideoIdValidator = {}));
+    var Video;
+    (function (Video) {
+        var Controller = (function () {
+            function Controller($scope, $database, $routeParams) {
+                this.$scope = $scope;
+                this.$database = $database;
+                this.$routeParams = $routeParams;
+                $database.execute("apiVideo", {
+                    VideoId: { value: $routeParams["videoId"] },
+                    GenreId: { value: $routeParams["genreId"] }
+                }).then(function (response) {
+                    $scope.video = response.data.Video;
+                    var player = new YT.Player('player', {
+                        videoId: $scope.video.VideoId,
+                        events: { onReady: function (event) { event.target.playVideo(); } }
+                    });
+                });
+            }
+            Controller.$inject = ["$scope", "$database", "$routeParams"];
+            return Controller;
+        }());
+        Video.Controller = Controller;
+    })(Video = GM.Video || (GM.Video = {}));
     var Recommend;
     (function (Recommend) {
         var Controller = (function () {
@@ -131,7 +154,7 @@ var GM;
                     VideoId: { value: this.$scope.video.id },
                     Title: { value: this.$scope.video.title },
                     Thumbnail: { value: this.$scope.video.thumbnail },
-                    Styles: { value: this.Styles, isObject: true }
+                    Styles: { value: { data: this.Styles }, isObject: true }
                 })
                     .then(function (response) {
                     console.log("submitted", response);
@@ -155,9 +178,8 @@ gm.config(["$mdThemingProvider", "$routeProvider", "$logProvider", function ($md
         $routeProvider.caseInsensitiveMatch = true;
         $routeProvider
             .when("/home", { templateUrl: "Views/home.html" })
-            .when("/recommend", {
-            templateUrl: "Views/recommend.html", controller: GM.Recommend.Controller, controllerAs: "ctrl"
-        })
+            .when("/video/:videoId/:genreId", { templateUrl: "Views/video.html", controller: GM.Video.Controller, controllerAs: "ctrl" })
+            .when("/recommend", { templateUrl: "Views/recommend.html", controller: GM.Recommend.Controller, controllerAs: "ctrl" })
             .otherwise({ redirectTo: "/home" });
         $logProvider.debugEnabled(GM.debugEnabled);
     }]);

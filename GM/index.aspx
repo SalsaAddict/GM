@@ -2,7 +2,7 @@
 
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml" ng-app="gm">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-gb" ng-app="gm">
 <head runat="server">
     <title>GM</title>
     <meta charset="utf-8" />

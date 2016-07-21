@@ -94,7 +94,6 @@ namespace GM
                                 using (SqlCommand Command = new SqlCommand(Procedure.Name, Connection, Transaction))
                                 {
                                     Command.CommandType = CommandType.StoredProcedure;
-                                    Command.Parameters.AddWithValue("UserId", Context.Session["UserId"]);
                                     foreach (KeyValuePair<string, Parameter> Parameter in Procedure.Parameters)
                                     {
                                         if (Parameter.Value.Xml)

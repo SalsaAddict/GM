@@ -20,7 +20,7 @@
     <script src="Scripts/angular-messages.min.js"></script>
     <script src="Scripts/angular-sanitize.min.js"></script>
     <script src="Scripts/angular-material/angular-material.min.js"></script>
-    <script src="Scripts/gm/gm.min.js" id="gm-script" data-authenticated="<%= Authenticated.ToString() %>"></script>
+    <script src="Scripts/gm/gm.min.js" id="gm-script" data-authenticated="<%= Authenticated.ToString() %>" data-id="<%= UserId %>"></script>
     <script src="https://www.youtube.com/iframe_api"></script>
 </body>
 </html>

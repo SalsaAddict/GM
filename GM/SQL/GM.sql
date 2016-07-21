@@ -1,5 +1,5 @@
 --USE [master]; DROP DATABASE [GoodMusic]; CREATE DATABASE [GoodMusic];
-USE [GoodMusic]
+--USE [GoodMusic]
 GO
 
 SET NOCOUNT ON

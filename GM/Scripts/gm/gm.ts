@@ -12,6 +12,7 @@ module GM {
     export interface IResponse { success: boolean; data: any; }
     export interface IVideo { id: string; title: string; thumbnail: string; }
     export module Database {
+        export var userId: string;
         export interface IParameter { value: any; isObject?: boolean; }
         export interface IParameters { [name: string]: IParameter; }
         export interface IHttpSuccess { data: IResponse }
@@ -26,10 +27,17 @@ module GM {
             public execute(name: string, parameters: IParameters = {}): angular.IPromise<IResponse> {
                 let procedure: IProcedure = { name: name, parameters: parameters },
                     deferred: angular.IDeferred<IResponse> = this.$q.defer();
+                parameters["UserId"] = { value: userId };
                 this.$log.debug("gm:execute", procedure);
                 this.$http.post("execute.ashx", procedure).then(
-                    (response: IHttpSuccess) => { deferred.resolve(response.data); },
-                    (response: IHttpError) => { deferred.resolve({ success: false, data: response.statusText }); });
+                    (response: IHttpSuccess) => {
+                        deferred.resolve(response.data);
+                        if (!response.data.success) { this.$log.warn(response.data.data); }
+                    },
+                    (response: IHttpError) => {
+                        deferred.resolve({ success: false, data: response.statusText });
+                        this.$log.warn(response.status, response.statusText);
+                    });
                 return deferred.promise;
             }
             public FetchGenres(): angular.IPromise<IResponse> {
@@ -255,4 +263,5 @@ gm.config(["$mdThemingProvider", "$routeProvider", "$logProvider", function (
 
 gm.run(["$log", function ($log: angular.ILogService) {
     GM.authenticated = document.getElementById("gm-script").getAttribute("data-authenticated").toLowerCase() === "true";
+    if (GM.authenticated) { GM.Database.userId = document.getElementById("gm-script").getAttribute("data-id"); }
 }]);

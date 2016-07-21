@@ -16,10 +16,20 @@ var GM;
                 this.$log = $log;
             }
             Service.prototype.execute = function (name, parameters) {
+                var _this = this;
                 if (parameters === void 0) { parameters = {}; }
                 var procedure = { name: name, parameters: parameters }, deferred = this.$q.defer();
+                parameters["UserId"] = { value: Database.userId };
                 this.$log.debug("gm:execute", procedure);
-                this.$http.post("execute.ashx", procedure).then(function (response) { deferred.resolve(response.data); }, function (response) { deferred.resolve({ success: false, data: response.statusText }); });
+                this.$http.post("execute.ashx", procedure).then(function (response) {
+                    deferred.resolve(response.data);
+                    if (!response.data.success) {
+                        _this.$log.warn(response.data.data);
+                    }
+                }, function (response) {
+                    deferred.resolve({ success: false, data: response.statusText });
+                    _this.$log.warn(response.status, response.statusText);
+                });
                 return deferred.promise;
             };
             Service.prototype.FetchGenres = function () {
@@ -281,5 +291,8 @@ gm.config(["$mdThemingProvider", "$routeProvider", "$logProvider", function ($md
     }]);
 gm.run(["$log", function ($log) {
         GM.authenticated = document.getElementById("gm-script").getAttribute("data-authenticated").toLowerCase() === "true";
+        if (GM.authenticated) {
+            GM.Database.userId = document.getElementById("gm-script").getAttribute("data-id");
+        }
     }]);
 //# sourceMappingURL=gm.js.map

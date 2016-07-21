@@ -7,7 +7,7 @@ declare let FB: any, YT: any;
 module GM {
     "use strict";
     export const googleApiKey: string = "AIzaSyCtuJp3jsaJp3X6U8ZS_X5H8omiAw5QaHg";
-    export const debugEnabled: boolean = true;
+    export const debugEnabled: boolean = false;
     export var authenticated: boolean = false;
     export interface IResponse { success: boolean; data: any; }
     export interface IVideo { id: string; title: string; thumbnail: string; }
@@ -31,6 +31,12 @@ module GM {
                     (response: IHttpSuccess) => { deferred.resolve(response.data); },
                     (response: IHttpError) => { deferred.resolve({ success: false, data: response.statusText }); });
                 return deferred.promise;
+            }
+            public FetchGenres(): angular.IPromise<IResponse> {
+                return this.execute("apiGenres");
+            }
+            public FetchStyles(genreId: string): angular.IPromise<IResponse> {
+                return this.execute("apiStyles", { GenreId: { value: genreId } });
             }
         }
     }
@@ -91,8 +97,57 @@ module GM {
             return factory;
         }
     }
+    export module Home {
+        interface IScope extends angular.IScope { genres: any[]; styles: any[]; videos: any[]; }
+        export class Controller {
+            static $inject: string[] = ["$scope", "$database", "$location"];
+            constructor(
+                private $scope: IScope,
+                private $database: Database.Service,
+                private $location: angular.ILocationService) {
+                $database.execute("apiUserSettings")
+                    .then((response: IResponse) => {
+                        this.Genre = response.data.Genre;
+                        this.Style = response.data.Style;
+                        this.FetchGenres();
+                        this.FetchStyles();
+                        this.FetchVideos();
+                    });
+            }
+            public FetchGenres() {
+                this.$database.FetchGenres().then((response: IResponse) => { this.$scope.genres = response.data.Genres; });
+            }
+            public FetchStyles() {
+                if (!this.Genre) { delete this.$scope.styles; return; }
+                this.$database.FetchStyles(this.Genre.Id).then((response: IResponse) => { this.$scope.styles = response.data.Styles; });
+            }
+            public Genre: any;
+            public SetGenre(genre?: any) {
+                if (genre) { this.Genre = genre; } else { delete this.Genre; }
+                delete this.Style;
+                this.FetchStyles();
+                this.FetchVideos();
+            }
+            public Style: any;
+            public SetStyle(style?: any) {
+                if (style) { this.Style = style; } else { delete this.Style; }
+                this.FetchVideos();
+            }
+            public FetchVideos() {
+                let parameters: Database.IParameters = {};
+                if (this.Genre) {
+                    parameters["GenreId"] = { value: this.Genre.Id }
+                    if (this.Style) {
+                        parameters["StyleId"] = { value: this.Style.Id }
+                    }
+                };
+                this.$database.execute("apiVideos", parameters)
+                    .then((response: IResponse) => { this.$scope.videos = response.data.Videos; });
+            }
+        }
+    }
     export module Video {
-        interface IScope extends angular.IScope { video: any; }
+        interface IScope extends angular.IScope { video: any; reviews: any; }
         export class Controller {
             static $inject: string[] = ["$scope", "$database", "$routeParams"];
             constructor(
@@ -106,33 +161,49 @@ module GM {
                     $scope.video = response.data.Video;
                     let player = new YT.Player('player', {
                         videoId: $scope.video.VideoId,
+                        height: "390",
+                        width: "640",
                         events: { onReady: function (event: any) { event.target.playVideo(); } }
                     });
+                    this.FetchReviews();
                 });
+            }
+            public FetchReviews(): void {
+                this.$database.execute("apiReviews", {
+                    VideoId: { value: this.$routeParams["videoId"] },
+                    GenreId: { value: this.$routeParams["genreId"] }
+                }).then((response: IResponse) => { this.$scope.reviews = response.data.Reviews; });
+            }
+            public Review(styleId: string, like: boolean) {
+                this.$database.execute("apiReview", {
+                    VideoId: { value: this.$routeParams["videoId"] },
+                    GenreId: { value: this.$routeParams["genreId"] },
+                    styleId: { value: styleId },
+                    Like: { value: like }
+                }).then((response: IResponse) => { this.$scope.reviews = response.data.Reviews; });;
             }
         }
     }
     export module Recommend {
         export interface IScope extends angular.IScope { video: IVideo; }
         export class Controller {
-            static $inject: string[] = ["$scope", "$database", "$http"];
+            static $inject: string[] = ["$scope", "$database", "$http", "$location"];
             constructor(
                 private $scope: IScope,
                 private $database: GM.Database.Service,
-                private $http: angular.IHttpService) {
+                private $http: angular.IHttpService,
+                private $location: angular.ILocationService) {
                 this.FetchGenres();
             }
             public Url: string;
             public Video: IVideo;
             public GenreId: any; public Genres: any[];
             public FetchGenres(): void {
-                this.$database.execute("apiGenres")
-                    .then((response: IResponse) => { this.Genres = response.data.Genres; });
+                this.$database.FetchGenres().then((response: IResponse) => { this.Genres = response.data.Genres; });
             }
             public StyleId: any; public Styles: any[];
             public FetchStyles(): void {
-                this.$database.execute("apiStyles", { GenreId: { value: this.GenreId } })
-                    .then((response: IResponse) => { this.Styles = response.data.Styles; });
+                this.$database.FetchStyles(this.GenreId).then((response: IResponse) => { this.Styles = response.data.Styles; });
             }
             public get SelectedStyles(): boolean {
                 if (!angular.isArray(this.Styles)) { return; }
@@ -150,7 +221,9 @@ module GM {
                     Styles: { value: { data: this.Styles }, isObject: true }
                 })
                     .then((response: IResponse) => {
-                        console.log("submitted", response);
+                        if (response.success) {
+                            this.$location.path("/video/" + this.$scope.video.id + "/" + this.GenreId);
+                        }
                     });
             }
         }
@@ -173,7 +246,7 @@ gm.config(["$mdThemingProvider", "$routeProvider", "$logProvider", function (
         .backgroundPalette("grey");
     $routeProvider.caseInsensitiveMatch = true;
     $routeProvider
-        .when("/home", { templateUrl: "Views/home.html" })
+        .when("/home", { templateUrl: "Views/home.html", controller: GM.Home.Controller, controllerAs: "ctrl" })
         .when("/video/:videoId/:genreId", { templateUrl: "Views/video.html", controller: GM.Video.Controller, controllerAs: "ctrl" })
         .when("/recommend", { templateUrl: "Views/recommend.html", controller: GM.Recommend.Controller, controllerAs: "ctrl" })
         .otherwise({ redirectTo: "/home" });

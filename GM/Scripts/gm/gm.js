@@ -5,7 +5,7 @@ var GM;
 (function (GM) {
     "use strict";
     GM.googleApiKey = "AIzaSyCtuJp3jsaJp3X6U8ZS_X5H8omiAw5QaHg";
-    GM.debugEnabled = true;
+    GM.debugEnabled = false;
     GM.authenticated = false;
     var Database;
     (function (Database) {
@@ -21,6 +21,12 @@ var GM;
                 this.$log.debug("gm:execute", procedure);
                 this.$http.post("execute.ashx", procedure).then(function (response) { deferred.resolve(response.data); }, function (response) { deferred.resolve({ success: false, data: response.statusText }); });
                 return deferred.promise;
+            };
+            Service.prototype.FetchGenres = function () {
+                return this.execute("apiGenres");
+            };
+            Service.prototype.FetchStyles = function (genreId) {
+                return this.execute("apiStyles", { GenreId: { value: genreId } });
             };
             Service.$inject = ["$q", "$http", "$log"];
             return Service;
@@ -90,10 +96,78 @@ var GM;
         }
         VideoIdValidator.DirectiveFactory = DirectiveFactory;
     })(VideoIdValidator = GM.VideoIdValidator || (GM.VideoIdValidator = {}));
+    var Home;
+    (function (Home) {
+        var Controller = (function () {
+            function Controller($scope, $database, $location) {
+                var _this = this;
+                this.$scope = $scope;
+                this.$database = $database;
+                this.$location = $location;
+                $database.execute("apiUserSettings")
+                    .then(function (response) {
+                    _this.Genre = response.data.Genre;
+                    _this.Style = response.data.Style;
+                    _this.FetchGenres();
+                    _this.FetchStyles();
+                    _this.FetchVideos();
+                });
+            }
+            Controller.prototype.FetchGenres = function () {
+                var _this = this;
+                this.$database.FetchGenres().then(function (response) { _this.$scope.genres = response.data.Genres; });
+            };
+            Controller.prototype.FetchStyles = function () {
+                var _this = this;
+                if (!this.Genre) {
+                    delete this.$scope.styles;
+                    return;
+                }
+                this.$database.FetchStyles(this.Genre.Id).then(function (response) { _this.$scope.styles = response.data.Styles; });
+            };
+            Controller.prototype.SetGenre = function (genre) {
+                if (genre) {
+                    this.Genre = genre;
+                }
+                else {
+                    delete this.Genre;
+                }
+                delete this.Style;
+                this.FetchStyles();
+                this.FetchVideos();
+            };
+            Controller.prototype.SetStyle = function (style) {
+                if (style) {
+                    this.Style = style;
+                }
+                else {
+                    delete this.Style;
+                }
+                this.FetchVideos();
+            };
+            Controller.prototype.FetchVideos = function () {
+                var _this = this;
+                var parameters = {};
+                if (this.Genre) {
+                    parameters["GenreId"] = { value: this.Genre.Id };
+                    if (this.Style) {
+                        parameters["StyleId"] = { value: this.Style.Id };
+                    }
+                }
+                ;
+                this.$database.execute("apiVideos", parameters)
+                    .then(function (response) { _this.$scope.videos = response.data.Videos; });
+            };
+            Controller.$inject = ["$scope", "$database", "$location"];
+            return Controller;
+        }());
+        Home.Controller = Controller;
+    })(Home = GM.Home || (GM.Home = {}));
     var Video;
     (function (Video) {
         var Controller = (function () {
             function Controller($scope, $database, $routeParams) {
+                var _this = this;
                 this.$scope = $scope;
                 this.$database = $database;
                 this.$routeParams = $routeParams;
@@ -104,10 +178,30 @@ var GM;
                     $scope.video = response.data.Video;
                     var player = new YT.Player('player', {
                         videoId: $scope.video.VideoId,
+                        height: "390",
+                        width: "640",
                         events: { onReady: function (event) { event.target.playVideo(); } }
                     });
+                    _this.FetchReviews();
                 });
             }
+            Controller.prototype.FetchReviews = function () {
+                var _this = this;
+                this.$database.execute("apiReviews", {
+                    VideoId: { value: this.$routeParams["videoId"] },
+                    GenreId: { value: this.$routeParams["genreId"] }
+                }).then(function (response) { _this.$scope.reviews = response.data.Reviews; });
+            };
+            Controller.prototype.Review = function (styleId, like) {
+                var _this = this;
+                this.$database.execute("apiReview", {
+                    VideoId: { value: this.$routeParams["videoId"] },
+                    GenreId: { value: this.$routeParams["genreId"] },
+                    styleId: { value: styleId },
+                    Like: { value: like }
+                }).then(function (response) { _this.$scope.reviews = response.data.Reviews; });
+                ;
+            };
             Controller.$inject = ["$scope", "$database", "$routeParams"];
             return Controller;
         }());
@@ -116,21 +210,20 @@ var GM;
     var Recommend;
     (function (Recommend) {
         var Controller = (function () {
-            function Controller($scope, $database, $http) {
+            function Controller($scope, $database, $http, $location) {
                 this.$scope = $scope;
                 this.$database = $database;
                 this.$http = $http;
+                this.$location = $location;
                 this.FetchGenres();
             }
             Controller.prototype.FetchGenres = function () {
                 var _this = this;
-                this.$database.execute("apiGenres")
-                    .then(function (response) { _this.Genres = response.data.Genres; });
+                this.$database.FetchGenres().then(function (response) { _this.Genres = response.data.Genres; });
             };
             Controller.prototype.FetchStyles = function () {
                 var _this = this;
-                this.$database.execute("apiStyles", { GenreId: { value: this.GenreId } })
-                    .then(function (response) { _this.Styles = response.data.Styles; });
+                this.$database.FetchStyles(this.GenreId).then(function (response) { _this.Styles = response.data.Styles; });
             };
             Object.defineProperty(Controller.prototype, "SelectedStyles", {
                 get: function () {
@@ -150,6 +243,7 @@ var GM;
                 configurable: true
             });
             Controller.prototype.Submit = function () {
+                var _this = this;
                 this.$database.execute("apiRecommend", {
                     VideoId: { value: this.$scope.video.id },
                     Title: { value: this.$scope.video.title },
@@ -157,10 +251,12 @@ var GM;
                     Styles: { value: { data: this.Styles }, isObject: true }
                 })
                     .then(function (response) {
-                    console.log("submitted", response);
+                    if (response.success) {
+                        _this.$location.path("/video/" + _this.$scope.video.id + "/" + _this.GenreId);
+                    }
                 });
             };
-            Controller.$inject = ["$scope", "$database", "$http"];
+            Controller.$inject = ["$scope", "$database", "$http", "$location"];
             return Controller;
         }());
         Recommend.Controller = Controller;
@@ -177,7 +273,7 @@ gm.config(["$mdThemingProvider", "$routeProvider", "$logProvider", function ($md
             .backgroundPalette("grey");
         $routeProvider.caseInsensitiveMatch = true;
         $routeProvider
-            .when("/home", { templateUrl: "Views/home.html" })
+            .when("/home", { templateUrl: "Views/home.html", controller: GM.Home.Controller, controllerAs: "ctrl" })
             .when("/video/:videoId/:genreId", { templateUrl: "Views/video.html", controller: GM.Video.Controller, controllerAs: "ctrl" })
             .when("/recommend", { templateUrl: "Views/recommend.html", controller: GM.Recommend.Controller, controllerAs: "ctrl" })
             .otherwise({ redirectTo: "/home" });

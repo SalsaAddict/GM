@@ -12,15 +12,7 @@
     <link rel="stylesheet" href="//fonts.googleapis.com/icon?family=Material+Icons" />
 </head>
 <body ng-cloak>
-    <md-toolbar>
-        <div class="md-toolbar-tools">
-            <md-button href="#/home">Home</md-button>
-            <md-button href="#/video/3VmoZrxXbmg/1">Flor</md-button>
-            <md-button href="#/recommend">Recommend</md-button>
-            <span flex></span>
-        </div>
-    </md-toolbar>
-    <div ng-view></div>
+    <ng-view></ng-view>
     <script src="Scripts/angular.min.js"></script>
     <script src="Scripts/angular-route.min.js"></script>
     <script src="Scripts/angular-animate.min.js"></script>

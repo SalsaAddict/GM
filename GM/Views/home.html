@@ -1,1 +1,54 @@
-﻿Home
+﻿<md-toolbar>
+    <div class="md-toolbar-tools">
+        <md-menu>
+            <md-button ng-click="$mdOpenMenu()">{{ctrl.Genre.Name || "All Genres"}}</md-button>
+            <md-menu-content>
+                <md-menu-item>
+                    <md-button ng-click="ctrl.SetGenre()">All Genres</md-button>
+                </md-menu-item>
+                <md-menu-item ng-repeat="genre in genres">
+                    <md-button ng-click="ctrl.SetGenre(genre)">{{genre.Name}}</md-button>
+                </md-menu-item>
+            </md-menu-content>
+        </md-menu>
+        <md-menu ng-if="ctrl.Genre">
+            <md-button ng-click="$mdOpenMenu()">{{ctrl.Style.Name || "All Styles"}}</md-button>
+            <md-menu-content>
+                <md-menu-item>
+                    <md-button ng-click="ctrl.SetStyle()">All Styles</md-button>
+                </md-menu-item>
+                <md-menu-item ng-repeat="style in styles">
+                    <md-button ng-click="ctrl.SetStyle(style)">{{style.Name}}</md-button>
+                </md-menu-item>
+            </md-menu-content>
+        </md-menu>
+        <span flex></span>
+        <md-button href="#/recommend">Recommend</md-button>
+    </div>
+</md-toolbar>
+<md-content>
+    <md-grid-list md-gutter="1em" md-row-height="1:1" md-cols-xs="1" md-cols-sm="2" md-cols-md="3" md-cols-lg="4">
+        <md-grid-tile ng-repeat="video in videos">
+            <md-card style="width: 320px; height: 320px">
+                <a ng-href="#/video/{{video.VideoId}}/{{video.GenreId}}">
+                    <img ng-src="{{video.Thumbnail}}" />
+                </a>
+                <md-card-header layout="column">
+                    <md-card-header-text>
+                        <div class="md-title" style="white-space: nowrap !important; overflow: hidden; text-overflow: ellipsis;">{{video.Title}}</div>
+                        <div class="md-title"><small>{{video.Genre}}</small></div>
+                    </md-card-header-text>
+                    <div layout="row" class="md-padding">
+                        <div flex="33">
+                            <md-icon md-font-icon="material-icons">thumb_up</md-icon> {{video.Likes}}
+                        </div>
+                        <div flex="33">
+                            <md-icon md-font-icon="material-icons">thumb_down</md-icon> {{video.Dislikes}}
+                        </div>
+                        <div flex="33">{{video.Rating * 100 | number: 0}}%</div>
+                    </div>
+                </md-card-header>
+            </md-card>
+        </md-grid-tile>
+    </md-grid-list>
+</md-content>

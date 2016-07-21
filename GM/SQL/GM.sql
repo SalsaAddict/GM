@@ -6,9 +6,14 @@ SET NOCOUNT ON
 GO
 
 IF OBJECT_ID(N'apiRecommend', N'P') IS NOT NULL DROP PROCEDURE [apiRecommend]
+IF OBJECT_ID(N'apiReview', N'P') IS NOT NULL DROP PROCEDURE [apiReview]
+IF OBJECT_ID(N'apiReviews', N'P') IS NOT NULL DROP PROCEDURE [apiReviews]
 IF OBJECT_ID(N'apiVideo', N'P') IS NOT NULL DROP PROCEDURE [apiVideo]
+IF OBJECT_ID(N'apiVideos', N'P') IS NOT NULL DROP PROCEDURE [apiVideos]
 IF OBJECT_ID(N'apiStyles', N'P') IS NOT NULL DROP PROCEDURE [apiStyles]
 IF OBJECT_ID(N'apiGenres', N'P') IS NOT NULL DROP PROCEDURE [apiGenres]
+IF OBJECT_ID(N'apiUserSettingsSave', N'P') IS NOT NULL DROP PROCEDURE [apiUserSettingsSave]
+IF OBJECT_ID(N'apiUserSettings', N'P') IS NOT NULL DROP PROCEDURE [apiUserSettings]
 IF OBJECT_ID(N'apiLogin', N'P') IS NOT NULL DROP PROCEDURE [apiLogin]
 IF OBJECT_ID(N'Review', N'U') IS NOT NULL DROP TABLE [Review]
 IF OBJECT_ID(N'Video', N'U') IS NOT NULL DROP TABLE [Video]
@@ -351,9 +356,13 @@ CREATE TABLE [User] (
 	[GenderId] NCHAR(1) NULL,
 	[CountryId] NCHAR(2) NULL,
 	[DateLogged] DATETIMEOFFSET NOT NULL,
+	[GenreId] INT NULL,
+	[StyleId] INT NULL,
 	CONSTRAINT [PK_User] PRIMARY KEY CLUSTERED ([Id]),
 	CONSTRAINT [FK_User_Gender] FOREIGN KEY ([GenderId]) REFERENCES [Gender] ([Id]),
-	CONSTRAINT [FK_User_Country] FOREIGN KEY ([CountryId]) REFERENCES [Country] ([Id])
+	CONSTRAINT [FK_User_Country] FOREIGN KEY ([CountryId]) REFERENCES [Country] ([Id]),
+	CONSTRAINT [FK_User_Genre] FOREIGN KEY ([GenreId]) REFERENCES [Genre] ([Id]),
+	CONSTRAINT [FK_User_Style] FOREIGN KEY ([StyleId]) REFERENCES [Style] ([Id]),
 )
 GO
 
@@ -383,6 +392,9 @@ CREATE TABLE [Review] (
 	CONSTRAINT [FK_Review_Style] FOREIGN KEY ([GenreId], [StyleId]) REFERENCES [Style] ([GenreId], [Id]),
 	CONSTRAINT [FK_Review_User] FOREIGN KEY ([UserId]) REFERENCES [User] ([Id])
 )
+GO
+
+CREATE INDEX [IX_Review_Video] ON [Review] ([VideoId], [GenreId]) INCLUDE ([StyleId], [UserId], [Like])
 GO
 
 CREATE PROCEDURE [apiLogin](
@@ -416,6 +428,35 @@ BEGIN
 	WHEN NOT MATCHED THEN
 		INSERT ([Id], [Forename], [Surname], [GenderId], [CountryId], [DateLogged])
 		VALUES (s.[UserId], s.[Forename], s.[Surname], s.[GenderId], s.[CountryId], s.[DateLogged]);
+END
+GO
+
+CREATE PROCEDURE [apiUserSettings](@UserId NVARCHAR(25))
+AS
+BEGIN
+	SET NOCOUNT ON
+	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
+	SELECT 
+		(SELECT (
+				SELECT
+					[Id] = g.[Id],
+					[Name] = g.[Name]
+				FROM [User] u
+					JOIN [Genre] g ON u.[GenreId] = g.[Id]
+				WHERE u.[Id] = @UserId
+				FOR XML PATH (N''), TYPE
+			) FOR XML PATH (N'Genre'), TYPE),
+		(SELECT (
+				SELECT
+					[Id] = s.[Id],
+					[Name] = s.[Name]
+				FROM [User] u
+					JOIN [Style] s ON u.[GenreId] = s.[GenreId] AND u.[StyleId] = s.[Id]
+				WHERE u.[Id] = @UserId
+				FOR XML PATH (N''), TYPE
+			) FOR XML PATH (N'Style'), TYPE)
+	FOR XML PATH (N'Data')
+	RETURN
 END
 GO
 
@@ -454,7 +495,60 @@ BEGIN
 END
 GO
 
-ALTER PROCEDURE [apiVideo](@VideoId NVARCHAR(25), @GenreId INT, @UserId NVARCHAR(25) = NULL)
+CREATE PROCEDURE [apiVideos](@GenreId INT = NULL, @StyleId INT = NULL, @UserId NVARCHAR(25) = NULL)
+AS
+BEGIN
+	SET NOCOUNT ON
+	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
+
+	IF @UserId IS NOT NULL BEGIN
+		UPDATE [User]
+		SET
+			[GenreId] = @GenreId,
+			[StyleId] = @StyleId
+		WHERE [Id] = @UserId
+	END
+
+	;WITH XMLNAMESPACES (N'http://james.newtonking.com/projects/json' AS [json]),
+	[Videos] AS (
+			SELECT
+				[VideoId] = v.[Id],
+				[Title] = v.[Title],
+				[Thumbnail] = v.[Thumbnail],
+				[GenreId] = r.[GenreId],
+				[Genre] = g.[Name],
+				[Likes] = COUNT(NULLIF(r.[Like], 0)),
+				[Dislikes] = COUNT(NULLIF(r.[Like], 1)),
+				[Reviews] = COUNT(*)
+			FROM [Video] v WITH (NOLOCK)
+				JOIN [Review] r WITH (NOLOCK) ON v.[Id] = r.[VideoId]
+					AND r.[GenreId] = ISNULL(@GenreId, r.[GenreId])
+					AND r.[StyleId] = ISNULL(@StyleId, r.[StyleId])
+				JOIN [Genre] g ON r.[GenreId] = g.[Id]
+			GROUP BY v.[Id], v.[Title], v.[Thumbnail], r.[GenreId], g.[Name]
+		)
+	SELECT (
+			SELECT
+				[@json:Array] = N'true',
+				[VideoId],
+				[Title],
+				[Thumbnail],
+				[GenreId],
+				[Genre],
+				[Likes],
+				[Dislikes],
+				[Reviews],
+				[Rating] = CONVERT(DECIMAL(3, 2), ROUND(CONVERT(FLOAT, [Likes]) / CONVERT(FLOAT, [Reviews]), 2))
+			FROM [Videos] WITH (NOLOCK)
+			ORDER BY [Rating] DESC, [Reviews] DESC, [Likes] DESC, [Dislikes]
+			FOR XML PATH (N'Videos'), TYPE
+		)
+	FOR XML PATH (N'Data')
+	RETURN
+END
+GO
+
+CREATE PROCEDURE [apiVideo](@VideoId NVARCHAR(25), @GenreId INT, @UserId NVARCHAR(25) = NULL)
 AS
 BEGIN
 	SET NOCOUNT ON
@@ -466,29 +560,75 @@ BEGIN
 		[Thumbnail] = v.[Thumbnail],
 		[Genre] = g.[Name],
 		[DateRecommended] = v.[DateRecommended],
-		[RecommendedBy] = u.[Name],
-		(
-				SELECT
-					[@json:Array] = N'true',
-					[Style] = s.[Name],
-					[Like] = CONVERT(BIT, MAX(CASE WHEN r.[UserId] = @UserId AND r.[Like] = 1 THEN 1 ELSE 0 END)),
-					[Likes] = COUNT(NULLIF(r.[Like], 0)),
-					[Dislike] = CONVERT(BIT, MAX(CASE WHEN r.[UserId] = @UserId AND r.[Like] = 0 THEN 1 ELSE 0 END)),
-					[Dislikes] = COUNT(NULLIF(r.[Like], 1)),
-					[Reviews] = COUNT(r.[Like])
-				FROM [Style] s
-					LEFT JOIN [Review] r ON v.[Id] = r.[VideoId] AND s.[GenreId] = r.[GenreId] AND s.[Id] = r.[StyleId]
-				WHERE s.[GenreId] = g.[Id]
-				GROUP BY s.[Name], s.[Sort]
-				ORDER BY s.[Sort]
-				FOR XML PATH (N'Reviews'), TYPE
-			)
+		[RecommendedBy] = u.[Name]
 	FROM [Video] v
 		JOIN [User] u ON v.[UserId] = u.[Id]
 		JOIN [Genre] g ON g.[Id] = @GenreId
 	WHERE v.[Id] = @VideoId
 	FOR XML PATH (N'Video'), ROOT (N'Data')
 	RETURN
+END
+GO
+
+CREATE PROCEDURE [apiReviews](@VideoId NVARCHAR(25), @GenreId INT, @UserId NVARCHAR(25) = NULL)
+AS
+BEGIN
+	SET NOCOUNT ON
+	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
+	;WITH XMLNAMESPACES (N'http://james.newtonking.com/projects/json' AS [json])
+	SELECT
+		[@json:Array] = N'true',
+		[StyleId] = s.[Id],
+		[Style] = s.[Name],
+		[Like] = CONVERT(BIT, MAX(CASE WHEN r.[UserId] = @UserId AND r.[Like] = 1 THEN 1 ELSE 0 END)),
+		[Likes] = COUNT(NULLIF(r.[Like], 0)),
+		[Dislike] = CONVERT(BIT, MAX(CASE WHEN r.[UserId] = @UserId AND r.[Like] = 0 THEN 1 ELSE 0 END)),
+		[Dislikes] = COUNT(NULLIF(r.[Like], 1)),
+		[Rating] = CONVERT(DECIMAL(3,2), ISNULL(ROUND(CONVERT(FLOAT, ISNULL(COUNT(NULLIF(r.[Like], 0)), 0)) / CONVERT(FLOAT, NULLIF(COUNT(r.[Like]), 0)), 2), 0)),
+		[Reviews] = COUNT(r.[Like])
+	FROM [Style] s WITH (NOLOCK)
+		LEFT JOIN [Review] r WITH (NOLOCK) ON @VideoId = r.[VideoId] AND s.[GenreId] = r.[GenreId] AND s.[Id] = r.[StyleId]
+	WHERE s.[GenreId] = @GenreId
+	GROUP BY s.[Id], s.[Name], s.[Sort]
+	ORDER BY s.[Sort]
+	FOR XML PATH (N'Reviews'), ROOT (N'Data')
+	RETURN
+END
+GO
+
+CREATE PROCEDURE [apiReview](
+	@VideoId NVARCHAR(25),
+	@GenreId INT,
+	@StyleId INT,
+	@UserId NVARCHAR(25),
+	@Like BIT
+)
+AS
+BEGIN
+
+	MERGE [Review] t
+	USING (
+			SELECT
+				[VideoId] = @VideoId,
+				[GenreId] = @GenreId,
+				[StyleId] = @StyleId,
+				[UserId] = @UserId,
+				[DateReviewed] = GETUTCDATE(),
+				[Like] = @Like
+		) s
+	ON t.[VideoId] = s.[VideoId] AND t.[GenreId] = s.[GenreId] AND t.[StyleId] = s.[StyleId] AND t.[UserId] = s.[UserId]
+	WHEN MATCHED AND s.[Like] != t.[Like] THEN
+		UPDATE
+		SET
+			[DateReviewed] = s.[DateReviewed],
+			[Like] = s.[Like]
+	WHEN MATCHED AND s.[Like] = t.[Like] THEN DELETE
+	WHEN NOT MATCHED THEN
+		INSERT ([VideoId], [GenreId], [StyleId], [UserId], [DateReviewed], [Like])
+		VALUES (s.[VideoId], s.[GenreId], s.[StyleId], s.[UserId], s.[DateReviewed], s.[Like]);
+	
+	EXEC [apiReviews] @VideoId, @GenreId, @UserId
+
 END
 GO
 

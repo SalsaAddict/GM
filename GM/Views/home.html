@@ -22,8 +22,10 @@
                 </md-menu-item>
             </md-menu-content>
         </md-menu>
-        <span flex></span>
         <md-button href="#/recommend">Recommend</md-button>
+        <span flex></span>
+        <md-button ng-click="ctrl.$facebook.Login()" ng-hide="ctrl.LoggedIn">Login</md-button>
+        <md-button ng-click="ctrl.$facebook.Logout()" ng-show="ctrl.LoggedIn">Logout</md-button>
     </div>
 </md-toolbar>
 <md-content ng-if="videos">

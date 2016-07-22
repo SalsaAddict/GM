@@ -5,6 +5,8 @@ GO
 SET NOCOUNT ON
 GO
 
+IF OBJECT_ID(N'apiImport', N'P') IS NOT NULL DROP PROCEDURE [apiImport]
+IF OBJECT_ID(N'apiExport', N'P') IS NOT NULL DROP PROCEDURE [apiExport]
 IF OBJECT_ID(N'apiRecommend', N'P') IS NOT NULL DROP PROCEDURE [apiRecommend]
 IF OBJECT_ID(N'apiReview', N'P') IS NOT NULL DROP PROCEDURE [apiReview]
 IF OBJECT_ID(N'apiReviews', N'P') IS NOT NULL DROP PROCEDURE [apiReviews]
@@ -401,8 +403,8 @@ CREATE PROCEDURE [apiLogin](
 	@UserId NVARCHAR(25),
 	@Forename NVARCHAR(127),
 	@Surname NVARCHAR(127),
-	@Gender NVARCHAR(6),
-	@CountryId NCHAR(2)
+	@Gender NVARCHAR(6) = NULL,
+	@CountryId NCHAR(2) = NULL
 )
 AS
 BEGIN
@@ -428,10 +430,11 @@ BEGIN
 	WHEN NOT MATCHED THEN
 		INSERT ([Id], [Forename], [Surname], [GenderId], [CountryId], [DateLogged])
 		VALUES (s.[UserId], s.[Forename], s.[Surname], s.[GenderId], s.[CountryId], s.[DateLogged]);
+	SELECT @UserId FOR XML PATH (N'UserId'), ROOT (N'Data')
 END
 GO
 
-CREATE PROCEDURE [apiUserSettings](@UserId NVARCHAR(25))
+CREATE PROCEDURE [apiUserSettings](@UserId NVARCHAR(25) = NULL)
 AS
 BEGIN
 	SET NOCOUNT ON
@@ -684,6 +687,173 @@ BEGIN
 		VALUES (s.[VideoId], s.[GenreId], s.[StyleId], s.[UserId], s.[DateReviewed], s.[Like]);
 
 	SELECT * FROM [Video] FOR XML PATH (N'Video'), ROOT (N'Recommend')
+	RETURN
+END
+GO
+
+CREATE PROCEDURE [apiExport](@UserId NVARCHAR(25) = NULL)
+AS
+BEGIN
+	SET NOCOUNT ON
+	SET TRANSACTION ISOLATION LEVEL SERIALIZABLE
+	SELECT
+		( -- Users
+				SELECT
+					[Id],
+					[Forename],
+					[Surname],
+					[GenderId],
+					[CountryId],
+					[DateLogged],
+					[GenreId],
+					[StyleId]
+				FROM [User]
+				FOR XML PATH (N'User'), ROOT (N'Users'), TYPE
+			),
+		( -- Videos
+				SELECT
+					[Id],
+					[Title],
+					[Thumbnail],
+					[DateRecommended],
+					[UserId]
+				FROM [Video]
+				FOR XML PATH (N'Video'), ROOT (N'Videos'), TYPE
+			),
+		( -- Reviews
+				SELECT
+					[VideoId],
+					[GenreId],
+					[StyleId],
+					[UserId],
+					[DateReviewed],
+					[Like]
+				FROM [Review]
+				FOR XML PATH (N'Review'), ROOT (N'Reviews'), TYPE
+			)
+	FOR XML PATH (N'GoodMusic')
+	RETURN
+END
+GO
+
+CREATE PROCEDURE [apiImport](@Import XML, @Commit BIT = 0, @UserId NVARCHAR(25) = NULL)
+AS
+BEGIN
+	SET NOCOUNT ON
+	BEGIN TRANSACTION
+	BEGIN TRY
+
+		;WITH [Import] AS (
+				SELECT
+					[Id] = n.value(N'Id[1]', N'NVARCHAR(25)'),
+					[Forename] = n.value(N'Forename[1]', N'NVARCHAR(127)'),
+					[Surname] = n.value(N'Surname[1]', N'NVARCHAR(127)'),
+					[GenderId] = n.value(N'GenderId[1]', N'NCHAR(1)'),
+					[CountryId] = n.value(N'CountryId[1]', N'NCHAR(2)'),
+					[DateLogged] = n.value(N'DateLogged[1]', N'DATETIMEOFFSET'),
+					[GenreId] = n.value(N'GenreId[1]', N'INT'),
+					[StyleId] = n.value(N'StyleId[1]', N'INT')
+				FROM @Import.nodes(N'/GoodMusic[1]/Users[1]/User') x (n)
+			)
+		INSERT INTO [User] (
+				[Id],
+				[Forename],
+				[Surname],
+				[GenderId],
+				[CountryId],
+				[DateLogged],
+				[GenreId],
+				[StyleId]
+			)
+		SELECT
+			i.[Id],
+			i.[Forename],
+			i.[Surname],
+			i.[GenderId],
+			i.[CountryId],
+			i.[DateLogged],
+			i.[GenreId],
+			i.[StyleId]
+		FROM [Import] i
+			LEFT JOIN [User] u ON i.[Id] = u.[Id]
+		WHERE u.[Id] IS NULL
+		PRINT N'Imported ' + CONVERT(NVARCHAR(10), @@ROWCOUNT) + N' user(s)'
+
+		;WITH [Import] AS (
+				SELECT
+					[Id] = n.value(N'Id[1]', N'NVARCHAR(25)'),
+					[Title] = n.value(N'Title[1]', N'NVARCHAR(255)'),
+					[Thumbnail] = n.value(N'Thumbnail[1]', N'NVARCHAR(max)'),
+					[DateRecommended] = n.value(N'DateRecommended[1]', N'DATETIMEOFFSET'),
+					[UserId] = n.value(N'UserId[1]', N'NVARCHAR(25)')
+				FROM @Import.nodes(N'/GoodMusic[1]/Videos[1]/Video') x (n)
+			)
+		INSERT INTO [Video] (
+				[Id],
+				[Title],
+				[Thumbnail],
+				[DateRecommended],
+				[UserId]
+			)
+		SELECT
+			i.[Id],
+			i.[Title],
+			i.[Thumbnail],
+			i.[DateRecommended],
+			i.[UserId]
+		FROM [Import] i
+			LEFT JOIN [Video] v ON i.[Id] = v.[Id]
+		WHERE v.[Id] IS NULL
+		PRINT N'Imported ' + CONVERT(NVARCHAR(10), @@ROWCOUNT) + N' video(s)'
+
+		;WITH [Import] AS (
+				SELECT
+					[VideoId] = n.value(N'VideoId[1]', N'NVARCHAR(25)'),
+					[GenreId] = n.value(N'GenreId[1]', N'INT'),
+					[StyleId] = n.value(N'StyleId[1]', N'INT'),
+					[UserId] = n.value(N'UserId[1]', N'NVARCHAR(25)'),
+					[DateReviewed] = n.value(N'DateReviewed[1]', N'DATETIMEOFFSET'),
+					[Like] = n.value(N'Like[1]', N'BIT')
+				FROM @Import.nodes(N'/GoodMusic[1]/Reviews[1]/Review') x (n)
+			)
+		INSERT INTO [Review] (
+				[VideoId],
+				[GenreId],
+				[StyleId],
+				[UserId],
+				[DateReviewed],
+				[Like]
+			)
+		SELECT
+			i.[VideoId],
+			i.[GenreId],
+			i.[StyleId],
+			i.[UserId],
+			i.[DateReviewed],
+			i.[Like]
+		FROM [Import] i
+			LEFT JOIN [Review] r ON i.[VideoId] = r.[VideoId]
+				AND i.[GenreId] = r.[GenreId]
+				AND i.[StyleId] = r.[StyleId]
+				AND i.[UserId] = i.[UserId]
+		WHERE r.[Like] IS NULL
+		PRINT N'Imported ' + CONVERT(NVARCHAR(10), @@ROWCOUNT) + N' review(s)'
+
+		IF ISNULL(@Commit, 0) = 1 BEGIN
+			COMMIT TRANSACTION
+			PRINT 'Commit'
+		END ELSE BEGIN
+			ROLLBACK TRANSACTION
+			PRINT 'Rollback'
+		END
+
+	END TRY
+	BEGIN CATCH
+		DECLARE @Message NVARCHAR(2048), @Severity INT, @State INT
+		SELECT @Message = ERROR_MESSAGE(), @Severity = ERROR_SEVERITY(), @State = ERROR_STATE()
+		ROLLBACK TRANSACTION
+		RAISERROR(@Message, @Severity, @State)
+	END CATCH
 	RETURN
 END
 GO

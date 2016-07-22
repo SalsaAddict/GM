@@ -4,8 +4,9 @@
 var GM;
 (function (GM) {
     "use strict";
+    GM.fbAppId = "1574477942882037";
     GM.googleApiKey = "AIzaSyCtuJp3jsaJp3X6U8ZS_X5H8omiAw5QaHg";
-    GM.debugEnabled = false;
+    GM.debugEnabled = true;
     GM.authenticated = false;
     var Database;
     (function (Database) {
@@ -19,7 +20,9 @@ var GM;
                 var _this = this;
                 if (parameters === void 0) { parameters = {}; }
                 var procedure = { name: name, parameters: parameters }, deferred = this.$q.defer();
-                parameters["UserId"] = { value: Database.userId };
+                if (this.UserId) {
+                    parameters["UserId"] = { value: this.UserId };
+                }
                 this.$log.debug("gm:execute", procedure);
                 this.$http.post("execute.ashx", procedure).then(function (response) {
                     deferred.resolve(response.data);
@@ -43,6 +46,58 @@ var GM;
         }());
         Database.Service = Service;
     })(Database = GM.Database || (GM.Database = {}));
+    var Facebook;
+    (function (Facebook) {
+        var Service = (function () {
+            function Service($database, $log) {
+                this.$database = $database;
+                this.$log = $log;
+            }
+            Service.prototype.Login = function () {
+                var _this = this;
+                var fail = function () {
+                    delete _this.$database.UserId;
+                    _this.$log.debug("gm:login:fail");
+                };
+                try {
+                    FB.login(function (response) {
+                        if (response.status === "connected") {
+                            FB.api("/me", { fields: ["id", "first_name", "last_name", "gender"] }, function (response) {
+                                _this.$database.execute("apiLogin", {
+                                    UserId: { value: response.id },
+                                    Forename: { value: response.first_name },
+                                    Surname: { value: response.last_name },
+                                    Gender: { value: response.gender }
+                                }).then(function (response) {
+                                    if (response.success) {
+                                        _this.$database.UserId = response.data.UserId;
+                                    }
+                                    _this.$log.debug("gm:login:success");
+                                });
+                            });
+                        }
+                        else
+                            fail();
+                    });
+                }
+                catch (ex) {
+                    fail();
+                }
+            };
+            Service.prototype.Logout = function () {
+                try {
+                    FB.logout(angular.noop);
+                }
+                finally {
+                    delete this.$database.UserId;
+                    this.$log.debug("gm:logout");
+                }
+            };
+            Service.$inject = ["$database", "$log"];
+            return Service;
+        }());
+        Facebook.Service = Service;
+    })(Facebook = GM.Facebook || (GM.Facebook = {}));
     var VideoIdValidator;
     (function (VideoIdValidator) {
         function VideoIdFromUrl(url) {
@@ -109,9 +164,10 @@ var GM;
     var Home;
     (function (Home) {
         var Controller = (function () {
-            function Controller($scope, $database, $location) {
+            function Controller($scope, $facebook, $database, $location) {
                 var _this = this;
                 this.$scope = $scope;
+                this.$facebook = $facebook;
                 this.$database = $database;
                 this.$location = $location;
                 $database.execute("apiUserSettings")
@@ -123,6 +179,11 @@ var GM;
                     _this.FetchVideos();
                 });
             }
+            Object.defineProperty(Controller.prototype, "LoggedIn", {
+                get: function () { return (this.$database.UserId) ? true : false; },
+                enumerable: true,
+                configurable: true
+            });
             Controller.prototype.FetchGenres = function () {
                 var _this = this;
                 this.$database.FetchGenres().then(function (response) { _this.$scope.genres = response.data.Genres; });
@@ -168,7 +229,7 @@ var GM;
                 this.$database.execute("apiVideos", parameters)
                     .then(function (response) { _this.$scope.videos = response.data.Videos; });
             };
-            Controller.$inject = ["$scope", "$database", "$location"];
+            Controller.$inject = ["$scope", "$facebook", "$database", "$location"];
             return Controller;
         }());
         Home.Controller = Controller;
@@ -274,6 +335,7 @@ var GM;
 })(GM || (GM = {}));
 var gm = angular.module("gm", ["ngRoute", "ngAnimate", "ngAria", "ngMessages", "ngSanitize", "ngMaterial"]);
 gm.service("$database", GM.Database.Service);
+gm.service("$facebook", GM.Facebook.Service);
 gm.directive("videoIdValidator", GM.VideoIdValidator.DirectiveFactory());
 gm.config(["$mdThemingProvider", "$routeProvider", "$logProvider", function ($mdThemingProvider, $routeProvider, $logProvider) {
         $mdThemingProvider.theme("default")
@@ -289,10 +351,12 @@ gm.config(["$mdThemingProvider", "$routeProvider", "$logProvider", function ($md
             .otherwise({ redirectTo: "/home" });
         $logProvider.debugEnabled(GM.debugEnabled);
     }]);
-gm.run(["$log", function ($log) {
-        GM.authenticated = document.getElementById("gm-script").getAttribute("data-authenticated").toLowerCase() === "true";
-        if (GM.authenticated) {
-            GM.Database.userId = document.getElementById("gm-script").getAttribute("data-id");
-        }
+gm.run(["$window", "$log", function ($window, $log) {
+        $window.fbAsyncInit = function () {
+            FB.init({ appId: GM.fbAppId, version: "v2.7" });
+            $log.debug("gm:fbAsyncInit");
+        };
+        //GM.authenticated = document.getElementById("gm-script").getAttribute("data-authenticated").toLowerCase() === "true";
+        //if (GM.authenticated) { GM.Database.userId = document.getElementById("gm-script").getAttribute("data-id"); }
     }]);
 //# sourceMappingURL=gm.js.map

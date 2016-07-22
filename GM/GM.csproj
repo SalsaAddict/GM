@@ -135,6 +135,7 @@
     <None Include="bundleconfig.json" />
     <None Include="Scripts\_references.js" />
     <Content Include="SQL\GM.sql" />
+    <Content Include="SQL\Import.sql" />
     <Content Include="Views\home.html" />
     <Content Include="Views\recommend.html" />
     <Content Include="Views\video.html" />

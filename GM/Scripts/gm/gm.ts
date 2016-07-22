@@ -6,9 +6,11 @@ declare let FB: any, YT: any;
 
 module GM {
     "use strict";
+    export const fbAppId: string = "1574477942882037";
     export const googleApiKey: string = "AIzaSyCtuJp3jsaJp3X6U8ZS_X5H8omiAw5QaHg";
-    export const debugEnabled: boolean = false;
+    export const debugEnabled: boolean = true;
     export var authenticated: boolean = false;
+    export interface IWindowService extends angular.IWindowService { fbAsyncInit: Function; }
     export interface IResponse { success: boolean; data: any; }
     export interface IVideo { id: string; title: string; thumbnail: string; }
     export module Database {
@@ -24,10 +26,11 @@ module GM {
                 private $q: angular.IQService,
                 private $http: angular.IHttpService,
                 private $log: angular.ILogService) { }
+            public UserId: string;
             public execute(name: string, parameters: IParameters = {}): angular.IPromise<IResponse> {
                 let procedure: IProcedure = { name: name, parameters: parameters },
                     deferred: angular.IDeferred<IResponse> = this.$q.defer();
-                parameters["UserId"] = { value: userId };
+                if (this.UserId) { parameters["UserId"] = { value: this.UserId }; }
                 this.$log.debug("gm:execute", procedure);
                 this.$http.post("execute.ashx", procedure).then(
                     (response: IHttpSuccess) => {
@@ -45,6 +48,57 @@ module GM {
             }
             public FetchStyles(genreId: string): angular.IPromise<IResponse> {
                 return this.execute("apiStyles", { GenreId: { value: genreId } });
+            }
+        }
+    }
+    export module Facebook {
+        interface IAuthResponse {
+            status: "connected" | "not_authorized" | "unknown";
+            authResponse: {
+                accessToken: string;
+                expiresIn: string;
+                signedRequest: string;
+                userID: string;
+            }
+        }
+        interface IUser { id: string; first_name: string; last_name: string; gender: "male" | "female"; }
+        export class Service {
+            static $inject: string[] = ["$database", "$log"];
+            constructor(
+                private $database: Database.Service,
+                private $log: angular.ILogService) { }
+            public Login(): void {
+                let fail: Function = (): void => {
+                    delete this.$database.UserId;
+                    this.$log.debug("gm:login:fail");
+                }
+                try {
+                    FB.login((response: IAuthResponse) => {
+                        if (response.status === "connected") {
+                            FB.api("/me", { fields: ["id", "first_name", "last_name", "gender"] }, (response: IUser) => {
+                                this.$database.execute("apiLogin", {
+                                    UserId: { value: response.id },
+                                    Forename: { value: response.first_name },
+                                    Surname: { value: response.last_name },
+                                    Gender: { value: response.gender }
+                                }).then((response: IResponse) => {
+                                    if (response.success) { this.$database.UserId = response.data.UserId; }
+                                    this.$log.debug("gm:login:success");
+                                });
+                            });
+                        } else fail();
+                    });
+                }
+                catch (ex) { fail(); }
+            }
+            public Logout(): void {
+                try {
+                    FB.logout(angular.noop);
+                }
+                finally {
+                    delete this.$database.UserId;
+                    this.$log.debug("gm:logout");
+                }
             }
         }
     }
@@ -108,9 +162,10 @@ module GM {
     export module Home {
         interface IScope extends angular.IScope { genres: any[]; styles: any[]; videos: any[]; }
         export class Controller {
-            static $inject: string[] = ["$scope", "$database", "$location"];
+            static $inject: string[] = ["$scope", "$facebook", "$database", "$location"];
             constructor(
                 private $scope: IScope,
+                public $facebook: Facebook.Service,
                 private $database: Database.Service,
                 private $location: angular.ILocationService) {
                 $database.execute("apiUserSettings")
@@ -122,6 +177,7 @@ module GM {
                         this.FetchVideos();
                     });
             }
+            public get LoggedIn(): boolean { return (this.$database.UserId) ? true : false; }
             public FetchGenres() {
                 this.$database.FetchGenres().then((response: IResponse) => { this.$scope.genres = response.data.Genres; });
             }
@@ -241,6 +297,7 @@ module GM {
 let gm: angular.IModule = angular.module("gm", ["ngRoute", "ngAnimate", "ngAria", "ngMessages", "ngSanitize", "ngMaterial"]);
 
 gm.service("$database", GM.Database.Service);
+gm.service("$facebook", GM.Facebook.Service);
 gm.directive("videoIdValidator", GM.VideoIdValidator.DirectiveFactory());
 
 gm.config(["$mdThemingProvider", "$routeProvider", "$logProvider", function (
@@ -261,7 +318,13 @@ gm.config(["$mdThemingProvider", "$routeProvider", "$logProvider", function (
     $logProvider.debugEnabled(GM.debugEnabled);
 }]);
 
-gm.run(["$log", function ($log: angular.ILogService) {
-    GM.authenticated = document.getElementById("gm-script").getAttribute("data-authenticated").toLowerCase() === "true";
-    if (GM.authenticated) { GM.Database.userId = document.getElementById("gm-script").getAttribute("data-id"); }
+gm.run(["$window", "$log", function (
+    $window: GM.IWindowService,
+    $log: angular.ILogService) {
+    $window.fbAsyncInit = function () {
+        FB.init({ appId: GM.fbAppId, version: "v2.7" });
+        $log.debug("gm:fbAsyncInit");
+    }
+    //GM.authenticated = document.getElementById("gm-script").getAttribute("data-authenticated").toLowerCase() === "true";
+    //if (GM.authenticated) { GM.Database.userId = document.getElementById("gm-script").getAttribute("data-id"); }
 }]);

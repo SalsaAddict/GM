@@ -60,8 +60,8 @@ namespace GM
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            if (Request.Params["signed_request"] == null) Response.Redirect("https://apps.facebook.com/1574477942882037/");
-            Authenticate();
+            //if (Request.Params["signed_request"] == null) Response.Redirect("https://apps.facebook.com/1574477942882037/");
+            if (Request.Params["signed_request"] != null) Authenticate();
         }
     }
 }

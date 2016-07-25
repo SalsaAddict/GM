@@ -7,7 +7,6 @@ var GM;
     GM.fbAppId = "1574477942882037";
     GM.googleApiKey = "AIzaSyCtuJp3jsaJp3X6U8ZS_X5H8omiAw5QaHg";
     GM.debugEnabled = true;
-    GM.authenticated = false;
     var Database;
     (function (Database) {
         var Service = (function () {
@@ -20,19 +19,23 @@ var GM;
                 var _this = this;
                 if (parameters === void 0) { parameters = {}; }
                 var procedure = { name: name, parameters: parameters }, deferred = this.$q.defer();
-                if (this.UserId) {
-                    parameters["UserId"] = { value: this.UserId };
+                parameters.UserId = { value: this.UserId || null };
+                try {
+                    this.$http.post("execute.ashx", procedure).then(function (response) {
+                        deferred.resolve(response.data);
+                        if (!response.data.success) {
+                            _this.$log.warn(response.data.data);
+                        }
+                        _this.$log.debug("gm:execute", procedure.name, { request: procedure, response: response.data.data });
+                    }, function (response) {
+                        deferred.resolve({ success: false, data: response.statusText });
+                        _this.$log.warn(response.status, response.statusText);
+                    });
                 }
-                this.$log.debug("gm:execute", procedure);
-                this.$http.post("execute.ashx", procedure).then(function (response) {
-                    deferred.resolve(response.data);
-                    if (!response.data.success) {
-                        _this.$log.warn(response.data.data);
-                    }
-                }, function (response) {
-                    deferred.resolve({ success: false, data: response.statusText });
-                    _this.$log.warn(response.status, response.statusText);
-                });
+                catch (ex) {
+                    deferred.resolve({ success: false, data: ex });
+                    this.$log.warn(ex.message);
+                }
                 return deferred.promise;
             };
             Service.prototype.FetchGenres = function () {
@@ -61,18 +64,22 @@ var GM;
                 };
                 try {
                     FB.login(function (response) {
+                        _this.$log.debug("gm:fb:authResponse", response);
                         if (response.status === "connected") {
                             FB.api("/me", { fields: ["id", "first_name", "last_name", "gender"] }, function (response) {
+                                _this.$database.UserId = response.id;
                                 _this.$database.execute("apiLogin", {
-                                    UserId: { value: response.id },
                                     Forename: { value: response.first_name },
                                     Surname: { value: response.last_name },
                                     Gender: { value: response.gender }
                                 }).then(function (response) {
                                     if (response.success) {
                                         _this.$database.UserId = response.data.UserId;
+                                        _this.$log.debug("gm:login:success", _this.$database.UserId);
                                     }
-                                    _this.$log.debug("gm:login:success");
+                                    else {
+                                        fail();
+                                    }
                                 });
                             });
                         }

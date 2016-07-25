@@ -1,3 +1,6 @@
+USE [GoodMusic]
+GO
+
 DECLARE @Import XML
 
 SET @Import = N'
@@ -750,4 +753,4 @@ SET @Import = N'
   </Reviews>
 </GoodMusic>'
 
-EXEC [apiImport] @Import
+EXEC [apiImport] @Import, 1

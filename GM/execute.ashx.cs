@@ -8,12 +8,11 @@ using System.Text;
 using System.Web;
 using System.Web.Configuration;
 using System.Xml;
-using System.Web.SessionState;
 
 namespace GM
 {
 
-    public class Execute : IHttpHandler, IReadOnlySessionState
+    public class Execute : IHttpHandler
     {
 
         private class Procedure

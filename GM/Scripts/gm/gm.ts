@@ -9,14 +9,13 @@ module GM {
     export const fbAppId: string = "1574477942882037";
     export const googleApiKey: string = "AIzaSyCtuJp3jsaJp3X6U8ZS_X5H8omiAw5QaHg";
     export const debugEnabled: boolean = true;
-    export var authenticated: boolean = false;
     export interface IWindowService extends angular.IWindowService { fbAsyncInit: Function; }
     export interface IResponse { success: boolean; data: any; }
     export interface IVideo { id: string; title: string; thumbnail: string; }
     export module Database {
         export var userId: string;
         export interface IParameter { value: any; isObject?: boolean; }
-        export interface IParameters { [name: string]: IParameter; }
+        export interface IParameters { UserId?: IParameter;[name: string]: IParameter; }
         export interface IHttpSuccess { data: IResponse }
         export interface IHttpError { status: number; statusText: string; }
         export interface IProcedure { name: string; parameters?: IParameters; }
@@ -30,17 +29,23 @@ module GM {
             public execute(name: string, parameters: IParameters = {}): angular.IPromise<IResponse> {
                 let procedure: IProcedure = { name: name, parameters: parameters },
                     deferred: angular.IDeferred<IResponse> = this.$q.defer();
-                if (this.UserId) { parameters["UserId"] = { value: this.UserId }; }
-                this.$log.debug("gm:execute", procedure);
-                this.$http.post("execute.ashx", procedure).then(
-                    (response: IHttpSuccess) => {
-                        deferred.resolve(response.data);
-                        if (!response.data.success) { this.$log.warn(response.data.data); }
-                    },
-                    (response: IHttpError) => {
-                        deferred.resolve({ success: false, data: response.statusText });
-                        this.$log.warn(response.status, response.statusText);
-                    });
+                parameters.UserId = { value: this.UserId || null };
+                try {
+                    this.$http.post("execute.ashx", procedure).then(
+                        (response: IHttpSuccess) => {
+                            deferred.resolve(response.data);
+                            if (!response.data.success) { this.$log.warn(response.data.data); }
+                            this.$log.debug("gm:execute", procedure.name, { request: procedure, response: response.data.data });
+                        },
+                        (response: IHttpError) => {
+                            deferred.resolve({ success: false, data: response.statusText });
+                            this.$log.warn(response.status, response.statusText);
+                        });
+                }
+                catch (ex) {
+                    deferred.resolve({ success: false, data: ex });
+                    this.$log.warn(ex.message);
+                }
                 return deferred.promise;
             }
             public FetchGenres(): angular.IPromise<IResponse> {
@@ -74,16 +79,19 @@ module GM {
                 }
                 try {
                     FB.login((response: IAuthResponse) => {
+                        this.$log.debug("gm:fb:authResponse", response);
                         if (response.status === "connected") {
                             FB.api("/me", { fields: ["id", "first_name", "last_name", "gender"] }, (response: IUser) => {
+                                this.$database.UserId = response.id;
                                 this.$database.execute("apiLogin", {
-                                    UserId: { value: response.id },
                                     Forename: { value: response.first_name },
                                     Surname: { value: response.last_name },
                                     Gender: { value: response.gender }
                                 }).then((response: IResponse) => {
-                                    if (response.success) { this.$database.UserId = response.data.UserId; }
-                                    this.$log.debug("gm:login:success");
+                                    if (response.success) {
+                                        this.$database.UserId = response.data.UserId;
+                                        this.$log.debug("gm:login:success", this.$database.UserId);
+                                    } else { fail(); }
                                 });
                             });
                         } else fail();

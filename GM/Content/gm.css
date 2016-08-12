@@ -1,0 +1,9 @@
+﻿.ellipsis {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+.md-sidenav-left .md-button {
+    text-align: left;
+}

@@ -1,42 +1,39 @@
-﻿<md-toolbar>
-    <div class="md-toolbar-tools">
-        <md-button ng-href="#/home">Home</md-button>
-        <span flex></span>
-        <md-button href="#/recommend">Recommend</md-button>
-    </div>
-</md-toolbar>
-<md-content layout="row" layout-align="center" flex="grow">
-    <md-card style="width: 640px;">
+﻿<md-content layout="row" layout-align="center">
+    <md-card ng-style="{ width: ctrl.PlayerWidth }">
         <div id="player"></div>
         <md-card-header>
             <md-card-header-text>
-                <div class="md-title" style="white-space: nowrap !important; overflow: hidden; text-overflow: ellipsis; width: 600px;">{{video.Title}}</div>
-                <div class="md-title"><small>{{video.Genre}}</small></div>
+                <span class="md-title ellipsis" style="width: 280px">
+                    <md-tooltip>{{video.Title}}</md-tooltip>
+                    <small>
+                        {{video.Title}}<br />
+                        {{video.Genre}}
+                    </small>
+                </span>
                 <span class="md-subhead">
-                    Recommended on {{video.DateRecommended | date: "dd MMM yyyy"}}
-                    by {{video.RecommendedBy}}
+                    <small>
+                        Recommended on {{video.DateRecommended | date: "dd MMM yyyy"}}<br />
+                        by {{video.RecommendedBy}}
+                    </small>
                 </span>
             </md-card-header-text>
         </md-card-header>
         <md-card-content layout="column">
             <div ng-repeat="Review in reviews" layout="row" layout-align="left center" ng-hide="(Review.Rating || 0) == 0 && !ShowAll">
-                <div flex="50">
-                    <span>{{Review.Style}}</span>
-                </div>
-                <div flex="20">
-                    <md-button class="md-icon-button" ng-class="{'md-primary': Review.Like == 1}" ng-click="ctrl.Review(Review.StyleId, true)">
-                        <md-icon md-font-icon="material-icons">thumb_up</md-icon>
-                    </md-button>
-                    {{Review.Likes}}
-                </div>
-                <div flex="20">
-                    <md-button class="md-icon-button" ng-class="{'md-warn': Review.Dislike == 1}" ng-click="ctrl.Review(Review.StyleId, false)">
-                        <md-icon md-font-icon="material-icons">thumb_down</md-icon>
-                    </md-button>
-                    {{Review.Dislikes}}
-                </div>
-                <div flex="10" layout-align="end">
-                    {{(Review.Rating || 0) * 100 | number: 0}}%
+                <div layout="row" layout-align="center center" flex>
+                    <div flex="50"><small>{{Review.Style}}</small></div>
+                    <div flex="25">
+                        <md-button class="md-icon-button" ng-class="{'md-primary': Review.Like == 1}" ng-click="ctrl.Review(Review.StyleId, true)">
+                            <md-icon md-font-icon="material-icons">thumb_up</md-icon>
+                        </md-button>
+                        <small>{{Review.Likes}}</small>
+                    </div>
+                    <div flex="25">
+                        <md-button class="md-icon-button" ng-class="{'md-warn': Review.Dislike == 1}" ng-click="ctrl.Review(Review.StyleId, false)">
+                            <md-icon md-font-icon="material-icons">thumb_down</md-icon>
+                        </md-button>
+                        <small>{{Review.Dislikes}}</small>
+                    </div>
                 </div>
             </div>
         </md-card-content>

@@ -11,8 +11,7 @@ SET @Import = N'
       <Forename>Pierre</Forename>
       <Surname>Henry</Surname>
       <GenderId>M</GenderId>
-      <CountryId>GB</CountryId>
-      <DateLogged>2016-07-22T08:14:45Z</DateLogged>
+      <DateLogged>2016-08-12T14:41:13.5700000Z</DateLogged>
       <GenreId>2</GenreId>
     </User>
   </Users>
@@ -225,6 +224,13 @@ SET @Import = N'
       <Title>Gente de Zona - Traidora (Salsa Version)[Cover Audio] ft. Marc Anthony</Title>
       <Thumbnail>https://i.ytimg.com/vi/TMq5USWW4vU/mqdefault.jpg</Thumbnail>
       <DateRecommended>2016-07-21T21:52:07Z</DateRecommended>
+      <UserId>10157068522865440</UserId>
+    </Video>
+    <Video>
+      <Id>ueyURAcJPOI</Id>
+      <Title>Plan B - Fanática Sensual (Bachata Version) | Prod. By Lone Lez</Title>
+      <Thumbnail>https://i.ytimg.com/vi/ueyURAcJPOI/mqdefault.jpg</Thumbnail>
+      <DateRecommended>2016-08-12T14:55:03.9130000Z</DateRecommended>
       <UserId>10157068522865440</UserId>
     </Video>
     <Video>
@@ -644,6 +650,22 @@ SET @Import = N'
       <StyleId>3</StyleId>
       <UserId>10157068522865440</UserId>
       <DateReviewed>2016-07-21T21:52:07Z</DateReviewed>
+      <Like>1</Like>
+    </Review>
+    <Review>
+      <VideoId>ueyURAcJPOI</VideoId>
+      <GenreId>2</GenreId>
+      <StyleId>8</StyleId>
+      <UserId>10157068522865440</UserId>
+      <DateReviewed>2016-08-12T14:55:03.9130000Z</DateReviewed>
+      <Like>1</Like>
+    </Review>
+    <Review>
+      <VideoId>ueyURAcJPOI</VideoId>
+      <GenreId>2</GenreId>
+      <StyleId>9</StyleId>
+      <UserId>10157068522865440</UserId>
+      <DateReviewed>2016-08-12T14:55:03.9130000Z</DateReviewed>
       <Like>1</Like>
     </Review>
     <Review>

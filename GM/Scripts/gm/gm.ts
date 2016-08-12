@@ -167,13 +167,25 @@ module GM {
             return factory;
         }
     }
+    export module Main {
+        export class Contoller {
+            static $inject: string[] = ["$mdSidenav", "$mdMedia", "$database", "$facebook"];
+            constructor(
+                private $mdSidenav: angular.material.ISidenavService,
+                private $mdMedia: angular.material.IMedia,
+                private $database: Database.Service,
+                public $facebook: Facebook.Service) { }
+            public get WideLayout(): boolean { return this.$mdMedia("gt-sm"); }
+            public ToggleMenu(): void { this.$mdSidenav("left").toggle(); }
+            public get LoggedIn(): boolean { return (this.$database.UserId) ? true : false; }
+        }
+    }
     export module Home {
         interface IScope extends angular.IScope { genres: any[]; styles: any[]; videos: any[]; }
         export class Controller {
-            static $inject: string[] = ["$scope", "$facebook", "$database", "$location"];
+            static $inject: string[] = ["$scope", "$database", "$location"];
             constructor(
                 private $scope: IScope,
-                public $facebook: Facebook.Service,
                 private $database: Database.Service,
                 private $location: angular.ILocationService) {
                 $database.execute("apiUserSettings")
@@ -185,7 +197,6 @@ module GM {
                         this.FetchVideos();
                     });
             }
-            public get LoggedIn(): boolean { return (this.$database.UserId) ? true : false; }
             public FetchGenres() {
                 this.$database.FetchGenres().then((response: IResponse) => { this.$scope.genres = response.data.Genres; });
             }
@@ -221,11 +232,12 @@ module GM {
     export module Video {
         interface IScope extends angular.IScope { video: any; reviews: any; }
         export class Controller {
-            static $inject: string[] = ["$scope", "$database", "$routeParams"];
+            static $inject: string[] = ["$scope", "$database", "$routeParams", "$mdMedia"];
             constructor(
                 private $scope: IScope,
                 private $database: Database.Service,
-                private $routeParams: angular.route.IRouteParamsService) {
+                private $routeParams: angular.route.IRouteParamsService,
+                private $mdMedia: angular.material.IMedia) {
                 $database.execute("apiVideo", {
                     VideoId: { value: $routeParams["videoId"] },
                     GenreId: { value: $routeParams["genreId"] }
@@ -233,13 +245,15 @@ module GM {
                     $scope.video = response.data.Video;
                     let player = new YT.Player('player', {
                         videoId: $scope.video.VideoId,
-                        height: "390",
-                        width: "640",
+                        height: function (): string { return (this.$mdMedia("gt-sm")) ? "640" : "320"; },
+                        width: function (): string { return (this.$mdMedia("gt-sm")) ? "640" : "320"; },
                         events: { onReady: function (event: any) { event.target.playVideo(); } }
                     });
                     this.FetchReviews();
                 });
             }
+            public get PlayerWidth(): string { return (this.$mdMedia("gt-sm")) ? "640px" : "320px"; }
+            public get PlayerHeight(): string { return (this.$mdMedia("gt-sm")) ? "390px" : "195px"; }
             public FetchReviews(): void {
                 this.$database.execute("apiReviews", {
                     VideoId: { value: this.$routeParams["videoId"] },
@@ -307,6 +321,7 @@ let gm: angular.IModule = angular.module("gm", ["ngRoute", "ngAnimate", "ngAria"
 gm.service("$database", GM.Database.Service);
 gm.service("$facebook", GM.Facebook.Service);
 gm.directive("videoIdValidator", GM.VideoIdValidator.DirectiveFactory());
+gm.controller("mainController", GM.Main.Contoller);
 
 gm.config(["$mdThemingProvider", "$routeProvider", "$logProvider", function (
     $mdThemingProvider: angular.material.IThemingProvider,

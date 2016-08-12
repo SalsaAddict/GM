@@ -76,6 +76,7 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Content\gm.css" />
     <Content Include="Content\YouTube-logo-full_color.png" />
     <Content Include="index.aspx" />
     <Content Include="packages.config" />

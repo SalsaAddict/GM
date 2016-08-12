@@ -65,11 +65,11 @@ VALUES
 	(1, N'La Rueda de Casino', 4),
 	(1, N'Son/Contratiempo', 5),
 	(1, N'Colombian/Cali', 6),
-	(2, N'Bachata (Dominican/Traditional)', 1),
+	(2, N'Dominican Bachata', 1),
 	(2, N'Bachata Moderna', 2),
 	(2, N'Sensual Bachata', 3),
 	(2, N'BachaTango', 4),
-	(3, N'Kizomba (Traditional)', 1),
+	(3, N'Kizomba', 1),
 	(3, N'Urban Kiz', 2),
 	(3, N'Semba', 3),
 	(4, N'Cha Cha Chá', 1)

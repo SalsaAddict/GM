@@ -168,13 +168,37 @@ var GM;
         }
         VideoIdValidator.DirectiveFactory = DirectiveFactory;
     })(VideoIdValidator = GM.VideoIdValidator || (GM.VideoIdValidator = {}));
+    var Main;
+    (function (Main) {
+        var Contoller = (function () {
+            function Contoller($mdSidenav, $mdMedia, $database, $facebook) {
+                this.$mdSidenav = $mdSidenav;
+                this.$mdMedia = $mdMedia;
+                this.$database = $database;
+                this.$facebook = $facebook;
+            }
+            Object.defineProperty(Contoller.prototype, "WideLayout", {
+                get: function () { return this.$mdMedia("gt-sm"); },
+                enumerable: true,
+                configurable: true
+            });
+            Contoller.prototype.ToggleMenu = function () { this.$mdSidenav("left").toggle(); };
+            Object.defineProperty(Contoller.prototype, "LoggedIn", {
+                get: function () { return (this.$database.UserId) ? true : false; },
+                enumerable: true,
+                configurable: true
+            });
+            Contoller.$inject = ["$mdSidenav", "$mdMedia", "$database", "$facebook"];
+            return Contoller;
+        }());
+        Main.Contoller = Contoller;
+    })(Main = GM.Main || (GM.Main = {}));
     var Home;
     (function (Home) {
         var Controller = (function () {
-            function Controller($scope, $facebook, $database, $location) {
+            function Controller($scope, $database, $location) {
                 var _this = this;
                 this.$scope = $scope;
-                this.$facebook = $facebook;
                 this.$database = $database;
                 this.$location = $location;
                 $database.execute("apiUserSettings")
@@ -186,11 +210,6 @@ var GM;
                     _this.FetchVideos();
                 });
             }
-            Object.defineProperty(Controller.prototype, "LoggedIn", {
-                get: function () { return (this.$database.UserId) ? true : false; },
-                enumerable: true,
-                configurable: true
-            });
             Controller.prototype.FetchGenres = function () {
                 var _this = this;
                 this.$database.FetchGenres().then(function (response) { _this.$scope.genres = response.data.Genres; });
@@ -236,7 +255,7 @@ var GM;
                 this.$database.execute("apiVideos", parameters)
                     .then(function (response) { _this.$scope.videos = response.data.Videos; });
             };
-            Controller.$inject = ["$scope", "$facebook", "$database", "$location"];
+            Controller.$inject = ["$scope", "$database", "$location"];
             return Controller;
         }());
         Home.Controller = Controller;
@@ -244,11 +263,12 @@ var GM;
     var Video;
     (function (Video) {
         var Controller = (function () {
-            function Controller($scope, $database, $routeParams) {
+            function Controller($scope, $database, $routeParams, $mdMedia) {
                 var _this = this;
                 this.$scope = $scope;
                 this.$database = $database;
                 this.$routeParams = $routeParams;
+                this.$mdMedia = $mdMedia;
                 $database.execute("apiVideo", {
                     VideoId: { value: $routeParams["videoId"] },
                     GenreId: { value: $routeParams["genreId"] }
@@ -256,13 +276,23 @@ var GM;
                     $scope.video = response.data.Video;
                     var player = new YT.Player('player', {
                         videoId: $scope.video.VideoId,
-                        height: "390",
-                        width: "640",
+                        height: function () { return (this.$mdMedia("gt-sm")) ? "640" : "320"; },
+                        width: function () { return (this.$mdMedia("gt-sm")) ? "640" : "320"; },
                         events: { onReady: function (event) { event.target.playVideo(); } }
                     });
                     _this.FetchReviews();
                 });
             }
+            Object.defineProperty(Controller.prototype, "PlayerWidth", {
+                get: function () { return (this.$mdMedia("gt-sm")) ? "640px" : "320px"; },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(Controller.prototype, "PlayerHeight", {
+                get: function () { return (this.$mdMedia("gt-sm")) ? "390px" : "195px"; },
+                enumerable: true,
+                configurable: true
+            });
             Controller.prototype.FetchReviews = function () {
                 var _this = this;
                 this.$database.execute("apiReviews", {
@@ -280,7 +310,7 @@ var GM;
                 }).then(function (response) { _this.$scope.reviews = response.data.Reviews; });
                 ;
             };
-            Controller.$inject = ["$scope", "$database", "$routeParams"];
+            Controller.$inject = ["$scope", "$database", "$routeParams", "$mdMedia"];
             return Controller;
         }());
         Video.Controller = Controller;
@@ -344,6 +374,7 @@ var gm = angular.module("gm", ["ngRoute", "ngAnimate", "ngAria", "ngMessages", "
 gm.service("$database", GM.Database.Service);
 gm.service("$facebook", GM.Facebook.Service);
 gm.directive("videoIdValidator", GM.VideoIdValidator.DirectiveFactory());
+gm.controller("mainController", GM.Main.Contoller);
 gm.config(["$mdThemingProvider", "$routeProvider", "$logProvider", function ($mdThemingProvider, $routeProvider, $logProvider) {
         $mdThemingProvider.theme("default")
             .primaryPalette("blue")

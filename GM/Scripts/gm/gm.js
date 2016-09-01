@@ -108,7 +108,10 @@ var GM;
     var VideoIdValidator;
     (function (VideoIdValidator) {
         function VideoIdFromUrl(url) {
-            var formats = ["youtube\.com\/.*?v=([^?&\/]+)", "youtu\.be\/([^?&\/]+)"], videoId;
+            var videoId, formats = [
+                "youtube\.com\/.*?v=([^?&\/]+)",
+                "youtu\.be\/([^?&\/]+)"
+            ];
             for (var i = 0; i < formats.length; i++) {
                 var rx = new RegExp(formats[i], "i");
                 if (rx.test(url)) {
@@ -276,23 +279,15 @@ var GM;
                     $scope.video = response.data.Video;
                     var player = new YT.Player('player', {
                         videoId: $scope.video.VideoId,
-                        height: function () { return (this.$mdMedia("gt-sm")) ? "640" : "320"; },
-                        width: function () { return (this.$mdMedia("gt-sm")) ? "640" : "320"; },
+                        width: "100%",
+                        height: "100%",
                         events: { onReady: function (event) { event.target.playVideo(); } }
                     });
                     _this.FetchReviews();
                 });
             }
-            Object.defineProperty(Controller.prototype, "PlayerWidth", {
-                get: function () { return (this.$mdMedia("gt-sm")) ? "640px" : "320px"; },
-                enumerable: true,
-                configurable: true
-            });
-            Object.defineProperty(Controller.prototype, "PlayerHeight", {
-                get: function () { return (this.$mdMedia("gt-sm")) ? "390px" : "195px"; },
-                enumerable: true,
-                configurable: true
-            });
+            Controller.prototype.PlayerWidth = function () { return (this.$mdMedia("gt-sm")) ? "640px" : "320px"; };
+            Controller.prototype.PlayerHeight = function () { return (this.$mdMedia("gt-sm")) ? "390px" : "195px"; };
             Controller.prototype.FetchReviews = function () {
                 var _this = this;
                 this.$database.execute("apiReviews", {
@@ -394,7 +389,5 @@ gm.run(["$window", "$log", function ($window, $log) {
             FB.init({ appId: GM.fbAppId, version: "v2.7" });
             $log.debug("gm:fbAsyncInit");
         };
-        //GM.authenticated = document.getElementById("gm-script").getAttribute("data-authenticated").toLowerCase() === "true";
-        //if (GM.authenticated) { GM.Database.userId = document.getElementById("gm-script").getAttribute("data-id"); }
     }]);
 //# sourceMappingURL=gm.js.map

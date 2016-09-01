@@ -1,6 +1,8 @@
 ﻿<md-content layout="row" layout-align="center">
-    <md-card ng-style="{ width: ctrl.PlayerWidth }">
-        <div id="player"></div>
+    <md-card ng-style="{ width: ctrl.PlayerWidth() }">
+        <div ng-style="{ width: ctrl.PlayerWidth(), height: ctrl.PlayerHeight() }">
+            <div id="player"></div>
+        </div>
         <md-card-header>
             <md-card-header-text>
                 <span class="md-title ellipsis" style="width: 280px">
@@ -43,4 +45,3 @@
         </md-card-actions>
     </md-card>
 </md-content>
-

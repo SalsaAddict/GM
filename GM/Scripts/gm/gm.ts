@@ -112,7 +112,11 @@ module GM {
     }
     export module VideoIdValidator {
         export function VideoIdFromUrl(url: string): string {
-            let formats: string[] = ["youtube\.com\/.*?v=([^?&\/]+)", "youtu\.be\/([^?&\/]+)"], videoId: string;
+            let videoId: string,
+                formats: string[] = [
+                    "youtube\.com\/.*?v=([^?&\/]+)",
+                    "youtu\.be\/([^?&\/]+)"
+                ];
             for (let i: number = 0; i < formats.length; i++) {
                 let rx: RegExp = new RegExp(formats[i], "i");
                 if (rx.test(url)) { videoId = rx.exec(url)[1]; break; }
@@ -245,15 +249,15 @@ module GM {
                     $scope.video = response.data.Video;
                     let player = new YT.Player('player', {
                         videoId: $scope.video.VideoId,
-                        height: function (): string { return (this.$mdMedia("gt-sm")) ? "640" : "320"; },
-                        width: function (): string { return (this.$mdMedia("gt-sm")) ? "640" : "320"; },
+                        width: "100%",
+                        height: "100%",
                         events: { onReady: function (event: any) { event.target.playVideo(); } }
                     });
                     this.FetchReviews();
                 });
             }
-            public get PlayerWidth(): string { return (this.$mdMedia("gt-sm")) ? "640px" : "320px"; }
-            public get PlayerHeight(): string { return (this.$mdMedia("gt-sm")) ? "390px" : "195px"; }
+            public PlayerWidth(): string { return (this.$mdMedia("gt-sm")) ? "640px" : "320px"; }
+            public PlayerHeight(): string { return (this.$mdMedia("gt-sm")) ? "390px" : "195px"; }
             public FetchReviews(): void {
                 this.$database.execute("apiReviews", {
                     VideoId: { value: this.$routeParams["videoId"] },
@@ -348,6 +352,4 @@ gm.run(["$window", "$log", function (
         FB.init({ appId: GM.fbAppId, version: "v2.7" });
         $log.debug("gm:fbAsyncInit");
     }
-    //GM.authenticated = document.getElementById("gm-script").getAttribute("data-authenticated").toLowerCase() === "true";
-    //if (GM.authenticated) { GM.Database.userId = document.getElementById("gm-script").getAttribute("data-id"); }
 }]);

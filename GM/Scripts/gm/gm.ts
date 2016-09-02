@@ -327,15 +327,21 @@ gm.service("$facebook", GM.Facebook.Service);
 gm.directive("videoIdValidator", GM.VideoIdValidator.DirectiveFactory());
 gm.controller("mainController", GM.Main.Contoller);
 
-gm.config(["$mdThemingProvider", "$routeProvider", "$logProvider", function (
+gm.config(["$sceDelegateProvider", "$mdThemingProvider", "$mdIconProvider", "$routeProvider", "$logProvider", function (
+    $sceDelegateProvider: angular.ISCEDelegateProvider,
     $mdThemingProvider: angular.material.IThemingProvider,
+    $mdIconProvider: angular.material.IIconProvider,
     $routeProvider: angular.route.IRouteProvider,
     $logProvider: angular.ILogProvider) {
+    $sceDelegateProvider.resourceUrlWhitelist(["self", "https://fonts.googleapis.com/icon?family=Material+Icons"]);
     $mdThemingProvider.theme("default")
         .primaryPalette("blue")
         .accentPalette("indigo")
         .warnPalette("red")
         .backgroundPalette("grey");
+    //$mdIconProvider.defaultIconSet("https://fonts.googleapis.com/icon?family=Material+Icons");
+    //$mdIconProvider.defaultFontSet("material-icons");
+    $mdIconProvider.icon("check", "Content/ic_check_black_24px.svg");
     $routeProvider.caseInsensitiveMatch = true;
     $routeProvider
         .when("/home", { templateUrl: "Views/home.html", controller: GM.Home.Controller, controllerAs: "ctrl" })

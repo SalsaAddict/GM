@@ -11,7 +11,7 @@ SET @Import = N'
       <Forename>Pierre</Forename>
       <Surname>Henry</Surname>
       <GenderId>M</GenderId>
-      <DateLogged>2016-08-12T14:41:13.5700000Z</DateLogged>
+      <DateLogged>2016-09-02T11:51:20.0170000Z</DateLogged>
       <GenreId>2</GenreId>
     </User>
   </Users>
@@ -154,6 +154,13 @@ SET @Import = N'
       <Title>Prince Royce - Culpa al Corazón (Official Video)</Title>
       <Thumbnail>https://i.ytimg.com/vi/-lDsqOsJL7k/mqdefault.jpg</Thumbnail>
       <DateRecommended>2016-07-21T23:11:26Z</DateRecommended>
+      <UserId>10157068522865440</UserId>
+    </Video>
+    <Video>
+      <Id>MOysl6rVBdM</Id>
+      <Title>Adele - Hello (salsa version by MANDINGA)</Title>
+      <Thumbnail>https://i.ytimg.com/vi/MOysl6rVBdM/mqdefault.jpg</Thumbnail>
+      <DateRecommended>2016-09-02T12:02:01.4970000Z</DateRecommended>
       <UserId>10157068522865440</UserId>
     </Video>
     <Video>
@@ -509,6 +516,22 @@ SET @Import = N'
       <Like>1</Like>
     </Review>
     <Review>
+      <VideoId>MOysl6rVBdM</VideoId>
+      <GenreId>1</GenreId>
+      <StyleId>1</StyleId>
+      <UserId>10157068522865440</UserId>
+      <DateReviewed>2016-09-02T12:02:01.5000000Z</DateReviewed>
+      <Like>1</Like>
+    </Review>
+    <Review>
+      <VideoId>MOysl6rVBdM</VideoId>
+      <GenreId>1</GenreId>
+      <StyleId>3</StyleId>
+      <UserId>10157068522865440</UserId>
+      <DateReviewed>2016-09-02T12:02:01.5000000Z</DateReviewed>
+      <Like>1</Like>
+    </Review>
+    <Review>
       <VideoId>muVvjONiytQ</VideoId>
       <GenreId>3</GenreId>
       <StyleId>11</StyleId>
@@ -721,7 +744,7 @@ SET @Import = N'
       <GenreId>2</GenreId>
       <StyleId>7</StyleId>
       <UserId>10157068522865440</UserId>
-      <DateReviewed>2016-07-21T23:10:45Z</DateReviewed>
+      <DateReviewed>2016-09-01T10:44:16.0400000Z</DateReviewed>
       <Like>1</Like>
     </Review>
     <Review>

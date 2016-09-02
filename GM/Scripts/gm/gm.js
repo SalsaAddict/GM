@@ -370,12 +370,16 @@ gm.service("$database", GM.Database.Service);
 gm.service("$facebook", GM.Facebook.Service);
 gm.directive("videoIdValidator", GM.VideoIdValidator.DirectiveFactory());
 gm.controller("mainController", GM.Main.Contoller);
-gm.config(["$mdThemingProvider", "$routeProvider", "$logProvider", function ($mdThemingProvider, $routeProvider, $logProvider) {
+gm.config(["$sceDelegateProvider", "$mdThemingProvider", "$mdIconProvider", "$routeProvider", "$logProvider", function ($sceDelegateProvider, $mdThemingProvider, $mdIconProvider, $routeProvider, $logProvider) {
+        $sceDelegateProvider.resourceUrlWhitelist(["self", "https://fonts.googleapis.com/icon?family=Material+Icons"]);
         $mdThemingProvider.theme("default")
             .primaryPalette("blue")
             .accentPalette("indigo")
             .warnPalette("red")
             .backgroundPalette("grey");
+        //$mdIconProvider.defaultIconSet("https://fonts.googleapis.com/icon?family=Material+Icons");
+        //$mdIconProvider.defaultFontSet("material-icons");
+        $mdIconProvider.icon("check", "Content/ic_check_black_24px.svg");
         $routeProvider.caseInsensitiveMatch = true;
         $routeProvider
             .when("/home", { templateUrl: "Views/home.html", controller: GM.Home.Controller, controllerAs: "ctrl" })

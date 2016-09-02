@@ -4,12 +4,14 @@
     <title>Good Music for Dancing</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Roboto:300,400,500,700,400italic" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700,400italic" />
     <link rel="stylesheet" href="Content/angular-material.min.css" />
-    <link rel="stylesheet" href="//fonts.googleapis.com/icon?family=Material+Icons" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
     <link rel="stylesheet" href="Content/gm.css" />
 </head>
 <body ng-cloak ng-controller="mainController as main" layout="column">
+    <div ng-view layout="column" flex style="overflow: hidden"></div>
+    <!--
     <md-toolbar>
         <div class="md-toolbar-tools">
             <md-button class="md-icon-button" ng-click="main.ToggleMenu()" ng-hide="main.WideLayout">
@@ -35,7 +37,7 @@
                         Login
                     </md-button>
                     <md-button class="md-primary" ng-click="main.$facebook.Logout()" ng-show="main.LoggedIn">
-                        <md-icon class="material-icons">exit_to_app</md-icon>
+                        <md-icon class="material-icons">person</md-icon>
                         Logout
                     </md-button>
                 </section>
@@ -45,6 +47,7 @@
             <ng-view flex></ng-view>
         </md-content>
     </section>
+    -->
     <script src="Scripts/angular.min.js"></script>
     <script src="Scripts/angular-route.min.js"></script>
     <script src="Scripts/angular-animate.min.js"></script>
@@ -53,7 +56,7 @@
     <script src="Scripts/angular-sanitize.min.js"></script>
     <script src="Scripts/angular-material/angular-material.min.js"></script>
     <script src="Scripts/gm/gm.min.js"></script>
-    <script src="//connect.facebook.net/en_US/sdk.js"></script>
-    <script src="//www.youtube.com/iframe_api"></script>
+    <script src="https://connect.facebook.net/en_US/sdk.js"></script>
+    <script src="https://www.youtube.com/iframe_api"></script>
 </body>
 </html>

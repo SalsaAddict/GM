@@ -1,6 +1,5 @@
 /// <reference path="../typings/angularjs/angular.d.ts" />
 /// <reference path="../typings/angularjs/angular-route.d.ts" />
-/// <reference path="../typings/angular-material/angular-material.d.ts" />
 var GM;
 (function (GM) {
     "use strict";
@@ -174,24 +173,22 @@ var GM;
     var Main;
     (function (Main) {
         var Contoller = (function () {
-            function Contoller($mdSidenav, $mdMedia, $database, $facebook) {
-                this.$mdSidenav = $mdSidenav;
-                this.$mdMedia = $mdMedia;
+            function Contoller($database, $facebook) {
                 this.$database = $database;
                 this.$facebook = $facebook;
             }
             Object.defineProperty(Contoller.prototype, "WideLayout", {
-                get: function () { return this.$mdMedia("gt-sm"); },
+                get: function () { return true; },
                 enumerable: true,
                 configurable: true
             });
-            Contoller.prototype.ToggleMenu = function () { this.$mdSidenav("left").toggle(); };
+            Contoller.prototype.ToggleMenu = function () { return; };
             Object.defineProperty(Contoller.prototype, "LoggedIn", {
                 get: function () { return (this.$database.UserId) ? true : false; },
                 enumerable: true,
                 configurable: true
             });
-            Contoller.$inject = ["$mdSidenav", "$mdMedia", "$database", "$facebook"];
+            Contoller.$inject = ["$database", "$facebook"];
             return Contoller;
         }());
         Main.Contoller = Contoller;
@@ -266,12 +263,11 @@ var GM;
     var Video;
     (function (Video) {
         var Controller = (function () {
-            function Controller($scope, $database, $routeParams, $mdMedia) {
+            function Controller($scope, $database, $routeParams) {
                 var _this = this;
                 this.$scope = $scope;
                 this.$database = $database;
                 this.$routeParams = $routeParams;
-                this.$mdMedia = $mdMedia;
                 $database.execute("apiVideo", {
                     VideoId: { value: $routeParams["videoId"] },
                     GenreId: { value: $routeParams["genreId"] }
@@ -286,8 +282,15 @@ var GM;
                     _this.FetchReviews();
                 });
             }
-            Controller.prototype.PlayerWidth = function () { return (this.$mdMedia("gt-sm")) ? "640px" : "320px"; };
-            Controller.prototype.PlayerHeight = function () { return (this.$mdMedia("gt-sm")) ? "390px" : "195px"; };
+            Object.defineProperty(Controller.prototype, "playerframewidth", {
+                get: function () {
+                    return document.getElementById("playerframe").getBoundingClientRect().width;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Controller.prototype.PlayerWidth = function () { return "640px"; };
+            Controller.prototype.PlayerHeight = function () { return "390px"; };
             Controller.prototype.FetchReviews = function () {
                 var _this = this;
                 this.$database.execute("apiReviews", {
@@ -305,7 +308,7 @@ var GM;
                 }).then(function (response) { _this.$scope.reviews = response.data.Reviews; });
                 ;
             };
-            Controller.$inject = ["$scope", "$database", "$routeParams", "$mdMedia"];
+            Controller.$inject = ["$scope", "$database", "$routeParams"];
             return Controller;
         }());
         Video.Controller = Controller;
@@ -365,21 +368,12 @@ var GM;
         Recommend.Controller = Controller;
     })(Recommend = GM.Recommend || (GM.Recommend = {}));
 })(GM || (GM = {}));
-var gm = angular.module("gm", ["ngRoute", "ngAnimate", "ngAria", "ngMessages", "ngSanitize", "ngMaterial"]);
+var gm = angular.module("gm", ["ngRoute", "ngAnimate", "ngAria", "ngMessages", "ngSanitize"]);
 gm.service("$database", GM.Database.Service);
 gm.service("$facebook", GM.Facebook.Service);
 gm.directive("videoIdValidator", GM.VideoIdValidator.DirectiveFactory());
 gm.controller("mainController", GM.Main.Contoller);
-gm.config(["$sceDelegateProvider", "$mdThemingProvider", "$mdIconProvider", "$routeProvider", "$logProvider", function ($sceDelegateProvider, $mdThemingProvider, $mdIconProvider, $routeProvider, $logProvider) {
-        $sceDelegateProvider.resourceUrlWhitelist(["self", "https://fonts.googleapis.com/icon?family=Material+Icons"]);
-        $mdThemingProvider.theme("default")
-            .primaryPalette("blue")
-            .accentPalette("indigo")
-            .warnPalette("red")
-            .backgroundPalette("grey");
-        //$mdIconProvider.defaultIconSet("https://fonts.googleapis.com/icon?family=Material+Icons");
-        //$mdIconProvider.defaultFontSet("material-icons");
-        $mdIconProvider.icon("check", "Content/ic_check_black_24px.svg");
+gm.config(["$routeProvider", "$logProvider", function ($routeProvider, $logProvider) {
         $routeProvider.caseInsensitiveMatch = true;
         $routeProvider
             .when("/home", { templateUrl: "Views/home.html", controller: GM.Home.Controller, controllerAs: "ctrl" })

@@ -4,6 +4,6 @@
     text-overflow: ellipsis !important;
 }
 
-.md-sidenav-left .md-button {
-    text-align: left;
+td, th {
+    vertical-align: middle !important;
 }

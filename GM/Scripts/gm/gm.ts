@@ -1,6 +1,5 @@
 ﻿/// <reference path="../typings/angularjs/angular.d.ts" />
 /// <reference path="../typings/angularjs/angular-route.d.ts" />
-/// <reference path="../typings/angular-material/angular-material.d.ts" />
 
 declare let FB: any, YT: any;
 
@@ -173,14 +172,12 @@ module GM {
     }
     export module Main {
         export class Contoller {
-            static $inject: string[] = ["$mdSidenav", "$mdMedia", "$database", "$facebook"];
+            static $inject: string[] = ["$database", "$facebook"];
             constructor(
-                private $mdSidenav: angular.material.ISidenavService,
-                private $mdMedia: angular.material.IMedia,
                 private $database: Database.Service,
                 public $facebook: Facebook.Service) { }
-            public get WideLayout(): boolean { return this.$mdMedia("gt-sm"); }
-            public ToggleMenu(): void { this.$mdSidenav("left").toggle(); }
+            public get WideLayout(): boolean { return true; }
+            public ToggleMenu(): void { return; }
             public get LoggedIn(): boolean { return (this.$database.UserId) ? true : false; }
         }
     }
@@ -236,12 +233,11 @@ module GM {
     export module Video {
         interface IScope extends angular.IScope { video: any; reviews: any; }
         export class Controller {
-            static $inject: string[] = ["$scope", "$database", "$routeParams", "$mdMedia"];
+            static $inject: string[] = ["$scope", "$database", "$routeParams"];
             constructor(
                 private $scope: IScope,
                 private $database: Database.Service,
-                private $routeParams: angular.route.IRouteParamsService,
-                private $mdMedia: angular.material.IMedia) {
+                private $routeParams: angular.route.IRouteParamsService) {
                 $database.execute("apiVideo", {
                     VideoId: { value: $routeParams["videoId"] },
                     GenreId: { value: $routeParams["genreId"] }
@@ -256,8 +252,11 @@ module GM {
                     this.FetchReviews();
                 });
             }
-            public PlayerWidth(): string { return (this.$mdMedia("gt-sm")) ? "640px" : "320px"; }
-            public PlayerHeight(): string { return (this.$mdMedia("gt-sm")) ? "390px" : "195px"; }
+            public get playerframewidth(): number {
+                return document.getElementById("playerframe").getBoundingClientRect().width;
+            }
+            public PlayerWidth(): string { return "640px"; }
+            public PlayerHeight(): string { return "390px"; }
             public FetchReviews(): void {
                 this.$database.execute("apiReviews", {
                     VideoId: { value: this.$routeParams["videoId"] },
@@ -320,28 +319,16 @@ module GM {
     }
 }
 
-let gm: angular.IModule = angular.module("gm", ["ngRoute", "ngAnimate", "ngAria", "ngMessages", "ngSanitize", "ngMaterial"]);
+let gm: angular.IModule = angular.module("gm", ["ngRoute", "ngAnimate", "ngAria", "ngMessages", "ngSanitize"]);
 
 gm.service("$database", GM.Database.Service);
 gm.service("$facebook", GM.Facebook.Service);
 gm.directive("videoIdValidator", GM.VideoIdValidator.DirectiveFactory());
 gm.controller("mainController", GM.Main.Contoller);
 
-gm.config(["$sceDelegateProvider", "$mdThemingProvider", "$mdIconProvider", "$routeProvider", "$logProvider", function (
-    $sceDelegateProvider: angular.ISCEDelegateProvider,
-    $mdThemingProvider: angular.material.IThemingProvider,
-    $mdIconProvider: angular.material.IIconProvider,
+gm.config(["$routeProvider", "$logProvider", function (
     $routeProvider: angular.route.IRouteProvider,
     $logProvider: angular.ILogProvider) {
-    $sceDelegateProvider.resourceUrlWhitelist(["self", "https://fonts.googleapis.com/icon?family=Material+Icons"]);
-    $mdThemingProvider.theme("default")
-        .primaryPalette("blue")
-        .accentPalette("indigo")
-        .warnPalette("red")
-        .backgroundPalette("grey");
-    //$mdIconProvider.defaultIconSet("https://fonts.googleapis.com/icon?family=Material+Icons");
-    //$mdIconProvider.defaultFontSet("material-icons");
-    $mdIconProvider.icon("check", "Content/ic_check_black_24px.svg");
     $routeProvider.caseInsensitiveMatch = true;
     $routeProvider
         .when("/home", { templateUrl: "Views/home.html", controller: GM.Home.Controller, controllerAs: "ctrl" })

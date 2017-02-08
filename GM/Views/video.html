@@ -1,4 +1,40 @@
-﻿<md-content layout="row" layout-align="center">
+﻿<div class="container">
+    <div class="panel panel-primary">
+        <div class="panel-heading">
+            <h5><b>{{video.Genre}}</b></h5>
+        </div>
+        <div class="embed-responsive embed-responsive-16by9">
+            <div class="embed-responsive-item" id="player"></div>
+        </div>
+        <div class="panel-body">
+            <h5 class="text-info ellipsis">
+                <b>{{video.Title}}</b><br />
+                <small>Recommended on {{video.DateRecommended | date: "dd MMM yyyy"}} by {{video.RecommendedBy}}</small>
+            </h5>
+            <table class="table table-condensed">
+                <tr ng-repeat="review in reviews">
+                    <th>{{review.Style}}</th>
+                    <th>
+                        <button type="button" class="btn btn-sm btn-default" ng-class="{'btn-success': review.Likes != 0}"
+                                ng-click="ctrl.Review(review.StyleId, true)">
+                            <i class="fa fa-fw fa-thumbs-up"></i>
+                            {{review.Likes}}
+                        </button>
+                    </th>
+                    <th>
+                        <button type="button" class="btn btn-sm btn-default" ng-class="{'btn-danger': review.Dislikes != 0}"
+                                ng-click="ctrl.Review(review.StyleId, false)">
+                            <i class="fa fa-fw fa-thumbs-down"></i>
+                            {{review.Dislikes}}
+                        </button>
+                    </th>
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!--<md-content layout="row" layout-align="center">
     <md-card ng-style="{ width: ctrl.PlayerWidth() }">
         <div ng-style="{ width: ctrl.PlayerWidth(), height: ctrl.PlayerHeight() }">
             <div id="player"></div>
@@ -44,4 +80,4 @@
             <md-button ng-href="#/home">Back</md-button>
         </md-card-actions>
     </md-card>
-</md-content>
+</md-content>-->

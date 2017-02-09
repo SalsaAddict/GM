@@ -6,11 +6,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" type="text/css" href="Content/gm.css" />
     <link rel="stylesheet" type="text/css" href="Content/bootstrap.min.css" />
-    <link rel="stylesheet" type="text/css" href="Content/bootstrap.flatly.min.css" />
+    <link rel="stylesheet" type="text/css" href="Content/bootstrap.simplex.min.css" />
     <link rel="stylesheet" type="text/css" href="Content/font-awesome.min.css" />
 </head>
 <body ng-cloak ng-controller="mainController as main" layout="column">
-    <div ng-view layout="column" flex style="overflow: hidden"></div>
+    <nav class="navbar navbar-default navbar-fixed-top">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle">
+                    <span class="sr-only">Toggle Navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="#">Good Music</a>
+            </div>
+            <ul class="nav navbar-nav">
+                <li>
+                    <a href="#!/home">
+                        <i class="fa fa-fw fa-lg fa-home"></i>
+                        <span class="hidden-xs">Home</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    <ng-view></ng-view>
+
     <!--
     <md-toolbar>
         <div class="md-toolbar-tools">
@@ -54,6 +76,7 @@
     <script src="Scripts/angular-aria.min.js"></script>
     <script src="Scripts/angular-messages.min.js"></script>
     <script src="Scripts/angular-sanitize.min.js"></script>
+    <script src="Scripts/angular-ui/ui-bootstrap-tpls.min.js"></script>
     <script src="Scripts/gm/gm.min.js"></script>
     <script src="https://connect.facebook.net/en_US/sdk.js"></script>
     <script src="https://www.youtube.com/iframe_api"></script>

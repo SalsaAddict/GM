@@ -1,4 +1,25 @@
-﻿<md-toolbar md-scroll-shrink md-shrink-speed-factor="0.1">
+﻿<div class="container-fluid">
+    <div class="row">
+        <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3" ng-repeat="video in videos">
+            <div class="panel panel-default" title="{{video.Title}}">
+                <div class="panel-heading">
+                    <h6 class="ellipsis text-uppercase">
+                        <span><b>{{$index + 1}}. {{video.Title}}</span></b><br />
+                        <small>{{video.Genre}}</small>
+                    </h6>
+                </div>
+                <div class="embed-responsive embed-responsive-16by9">
+                    <a ng-href="#!/video/{{video.VideoId}}/{{video.GenreId}}">
+                        <img ng-src="{{video.Thumbnail}}" class="embed-responsive-item" />
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--
+<md-toolbar md-scroll-shrink md-shrink-speed-factor="0.1">
     <div class="md-toolbar-tools">
         <span>Good Music</span>
     </div>
@@ -67,3 +88,4 @@
         </md-grid-tile>
     </md-grid-list>
 </md-content>
+-->

@@ -33,17 +33,17 @@ module GM {
                     this.$http.post("execute.ashx", procedure).then(
                         (response: IHttpSuccess) => {
                             deferred.resolve(response.data);
-                            if (!response.data.success) { this.$log.warn(response.data.data); }
+                            if (!response.data.success) { this.$log.error(response.data.data); }
                             this.$log.debug("gm:execute", procedure.name, { request: procedure, response: response.data.data });
                         },
                         (response: IHttpError) => {
                             deferred.resolve({ success: false, data: response.statusText });
-                            this.$log.warn(response.status, response.statusText);
+                            this.$log.error(response.status, response.statusText);
                         });
                 }
                 catch (ex) {
                     deferred.resolve({ success: false, data: ex });
-                    this.$log.warn(ex.message);
+                    this.$log.error(ex.message);
                 }
                 return deferred.promise;
             }
@@ -319,7 +319,7 @@ module GM {
     }
 }
 
-let gm: angular.IModule = angular.module("gm", ["ngRoute", "ngAnimate", "ngAria", "ngMessages", "ngSanitize"]);
+let gm: angular.IModule = angular.module("gm", ["ngRoute", "ngAnimate", "ngAria", "ngMessages", "ngSanitize", "ui.bootstrap"]);
 
 gm.service("$database", GM.Database.Service);
 gm.service("$facebook", GM.Facebook.Service);

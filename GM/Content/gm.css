@@ -1,4 +1,8 @@
-﻿.ellipsis {
+﻿body {
+    padding-top: 70px;
+}
+
+.ellipsis {
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
@@ -6,4 +10,8 @@
 
 td, th {
     vertical-align: middle !important;
+}
+
+.btn-review {
+    width: 75px !important;
 }

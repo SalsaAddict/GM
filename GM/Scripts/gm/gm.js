@@ -23,17 +23,17 @@ var GM;
                     this.$http.post("execute.ashx", procedure).then(function (response) {
                         deferred.resolve(response.data);
                         if (!response.data.success) {
-                            _this.$log.warn(response.data.data);
+                            _this.$log.error(response.data.data);
                         }
                         _this.$log.debug("gm:execute", procedure.name, { request: procedure, response: response.data.data });
                     }, function (response) {
                         deferred.resolve({ success: false, data: response.statusText });
-                        _this.$log.warn(response.status, response.statusText);
+                        _this.$log.error(response.status, response.statusText);
                     });
                 }
                 catch (ex) {
                     deferred.resolve({ success: false, data: ex });
-                    this.$log.warn(ex.message);
+                    this.$log.error(ex.message);
                 }
                 return deferred.promise;
             };
@@ -368,7 +368,7 @@ var GM;
         Recommend.Controller = Controller;
     })(Recommend = GM.Recommend || (GM.Recommend = {}));
 })(GM || (GM = {}));
-var gm = angular.module("gm", ["ngRoute", "ngAnimate", "ngAria", "ngMessages", "ngSanitize"]);
+var gm = angular.module("gm", ["ngRoute", "ngAnimate", "ngAria", "ngMessages", "ngSanitize", "ui.bootstrap"]);
 gm.service("$database", GM.Database.Service);
 gm.service("$facebook", GM.Facebook.Service);
 gm.directive("videoIdValidator", GM.VideoIdValidator.DirectiveFactory());

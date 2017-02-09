@@ -1,35 +1,53 @@
-﻿<div class="container">
-    <div class="panel panel-primary">
-        <div class="panel-heading">
-            <h5><b>{{video.Genre}}</b></h5>
+﻿<div class="col-xs-12 col-sm-offset-2 col-sm-8 col-md-offset-3 col-md-6 col-lg-offset-4 col-lg-4">
+    <div class="panel panel-default">
+        <div class="panel-heading h5">
+            <p class="pull-right">
+                <a href="#!/home" class="btn btn-xs btn-link">
+                    <i class="fa fa-fw fa-lg fa-chevron-circle-left"></i> Back
+                </a>
+            </p>
+            <p class="ellipsis text-uppercase">
+                <span title="{{video.Title}}"><b>{{video.Title}}</b></span>
+            </p>
         </div>
         <div class="embed-responsive embed-responsive-16by9">
             <div class="embed-responsive-item" id="player"></div>
         </div>
-        <div class="panel-body">
-            <h5 class="text-info ellipsis">
-                <b>{{video.Title}}</b><br />
-                <small>Recommended on {{video.DateRecommended | date: "dd MMM yyyy"}} by {{video.RecommendedBy}}</small>
-            </h5>
-            <table class="table table-condensed">
-                <tr ng-repeat="review in reviews">
-                    <th>{{review.Style}}</th>
-                    <th>
-                        <button type="button" class="btn btn-sm btn-default" ng-class="{'btn-success': review.Likes != 0}"
-                                ng-click="ctrl.Review(review.StyleId, true)">
+        <table class="table">
+            <tr>
+                <th colspan="3">
+                    <h4><b>{{video.Genre}}</b></h4>
+                </th>
+            </tr>
+            <tr ng-repeat="review in reviews" ng-hide="!showall && review.Rating == 0">
+                <th>{{review.Style}}</th>
+                <td class="text-right btn-review">
+                    <button type="button" class="btn btn-sm btn-default btn-review"
+                            ng-class="{'btn-success': review.Like == 1}"
+                            ng-click="ctrl.Review(review.StyleId, true)">
+                        <span ng-class="{'text-success': review.Like == 0 && review.Likes != 0}">
                             <i class="fa fa-fw fa-thumbs-up"></i>
-                            {{review.Likes}}
-                        </button>
-                    </th>
-                    <th>
-                        <button type="button" class="btn btn-sm btn-default" ng-class="{'btn-danger': review.Dislikes != 0}"
-                                ng-click="ctrl.Review(review.StyleId, false)">
+                            <small>{{review.Likes || 0}}</small>
+                        </span>
+                    </button>
+                </td>
+                <td class="text-right btn-review">
+                    <button type="button" class="btn btn-sm btn-default btn-review"
+                            ng-class="{'btn-danger': review.Dislike == 1}"
+                            ng-click="ctrl.Review(review.StyleId, false)">
+                        <span ng-class="{'text-danger': review.Dislike == 0 && review.Dislikes != 0}">
                             <i class="fa fa-fw fa-thumbs-down"></i>
-                            {{review.Dislikes}}
-                        </button>
-                    </th>
-                </tr>
-            </table>
+                            <small>{{review.Dislikes || 0}}</small>
+                        </span>
+                    </button>
+                </td>
+            </tr>
+        </table>
+        <div class="panel-footer" ng-hide="showall">
+            <button type="button" class="btn btn-link btn-block" ng-click="showall = !showall" title="Show All Styles">
+                <span>Show All Styles</span>
+                <i class="fa fa-fw fa-lg fa-chevron-circle-down"></i>
+            </button>
         </div>
     </div>
 </div>
